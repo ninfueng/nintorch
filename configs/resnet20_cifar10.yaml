@@ -1,0 +1,51 @@
+# Project related settings
+project_name: "resnet20_cifar10"
+run_name: "resnet20_cifar10.yaml"
+model-log-freq: null
+log_interval: 100
+eval_every_epoch: 1
+record_imgs: false
+dist: false
+yaml_dir: "resnet20_cifar10.yaml"
+
+# Training related settings
+model_name: "resnet20"
+lr: 1e-1
+opt: "sgd"
+batch_size: 128
+seed: 3_407
+workers: 8
+weight_decay: 1e-4
+warmup_epoch: 5
+epoch: 200
+clip_grad: 0.0
+dataset: "cifar10"
+download_dir: "./downloads"
+subset_idx_load_dir: null
+grad_accum: null
+fp16: false
+wandb: false
+mixup: false
+auto_augment: false
+rand_erasing: false
+label_smoothing: false
+
+# Mixup related settings
+mixup_mixup_alpha: 0.8
+mixup_cutmix_alpha: 1.0
+mixup_cutmix_minmax: null
+mixup_prob: 1.0
+mixup_switch_prob: 0.5
+mixup_mode: "batch"
+mixup_label_smoothing: 0.1
+
+# Augmentation related settings
+color_jitter: 0.4
+auto_augment_type: "rand-m9-mstd0.5-inc1"
+interpolation: "bicubic"
+
+# Random-erasing related settings
+re-prob: 0.25
+re-mode: "pixel"
+re-count: 1
+dataset_dir: null
