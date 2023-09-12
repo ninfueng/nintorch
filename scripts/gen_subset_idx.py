@@ -1,6 +1,7 @@
-"""gen_subset_idx.py
+"""Generate randomly selected subset of indexs and save in .pt file.
 
 Note:
+
 * imagenet train size: 1,281,167
 * cifar10 train size: 50,000
 * cifar100 train size: 50,000

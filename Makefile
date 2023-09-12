@@ -1,9 +1,9 @@
 .PHONY: clean
 clean:
-	rm -rf wandb/
-	rm -rf dist/
-	rm -rf build/
-	rm -rf nintorch.egg-info/
+	rm -rf ./wandb/
+	rm -rf ./dist/
+	rm -rf ./build/
+	rm -rf ./nintorch.egg-info/
 	find . -iname .vscode | xargs rm -rf
 	find . -iname __pycache__ | xargs rm -rf
 	find . -iname .pytest_cache | xargs rm -rf
