@@ -75,7 +75,10 @@ class Suggestion:
         elif self.typename == "log_uniform":
             suggest = trial.suggest_loguniform(self.name, self.amin, self.amax)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(
+            'Expect `typename` in ("float", "categorical", "int", "uniform", "log_uniform").'
+            f'Your `typename`: {self.typename}.'
+        )
         return suggest
 
     def gen_cmd(self, suggest: Union[int, float]) -> str:

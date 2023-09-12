@@ -53,7 +53,7 @@ from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
 from nintorch.datasets.cinic10 import CINIC10
 from nintorch.models import construct_model_cifar
 from nintorch.scheduler import WarmupLR
-from nintorch.utils.perform import enable_perform, set_random_seed
+from nintorch.utils.perform import enable_tf32, disable_debug, set_benchmark, seed_torch
 from utils import test_an_epoch, train_an_epoch
 
 if __name__ == "__main__":
@@ -66,7 +66,6 @@ if __name__ == "__main__":
     group.add_argument("--model-log-freq", type=int, default=None)
     group.add_argument("--log-interval", type=int, default=100)
     group.add_argument("--eval-every-epoch", type=int, default=1)
-    group.add_argument("--record-imgs", action="store_true")
     group.add_argument("--dist", action="store_true")
     group.add_argument("--yaml-dir", type=str, default=None)
 
@@ -75,7 +74,7 @@ if __name__ == "__main__":
     group.add_argument("--lr", type=float, default=5e-1)
     group.add_argument("--opt", type=str, default="sgd")
     group.add_argument("--batch-size", type=int, default=512)
-    group.add_argument("--seed", type=int, default=3_407)
+    group.add_argument("--seed", type=int, default=None)
     group.add_argument("--workers", type=int, default=os.cpu_count())
     group.add_argument("--weight-decay", type=float, default=1e-4)
     group.add_argument("--warmup-epoch", type=int, default=5)
@@ -173,7 +172,7 @@ if __name__ == "__main__":
             .replace(" ", "-"),
         )
         os.makedirs(exp_path, exist_ok=True)
-        set_logger(os.path.join(exp_path, "info.log"), to_stdout=True, with_color=True)
+        set_logger(os.path.join(exp_path, "info.log"), stdout=True)
         logging.info(args)
 
         if yaml:
@@ -184,8 +183,14 @@ if __name__ == "__main__":
 
         backup_scripts(["*.py", "*.sh", "*.md"], os.path.join(exp_path, "scripts"))
         cmd = "python " + reduce(lambda x, y: f"{x} {y}", sys.argv)
-        set_random_seed(args.seed)
-        enable_perform()
+
+        if args.seed is not None:
+            seed_torch(args.seed)
+        # https://discuss.ray.io/t/amp-mixed-precision-training-is-slower-than-default-precision/9842/7
+        enable_tf32() if not args.fp16 else None
+        disable_debug()
+        set_benchmark()
+
         logging.info(f"Run with the command line: `{cmd}`.")
     else:
         exp_path = None

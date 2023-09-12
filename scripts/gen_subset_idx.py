@@ -1,14 +1,10 @@
-"""Generate randomly selected subset of indexs and save in .pt file.
+"""Generate randomly selected subset of indexs and save in `.pt` file.
 
 Note:
-
-* imagenet train size: 1,281,167
-* cifar10 train size: 50,000
-* cifar100 train size: 50,000
-* cinic10 train size: 90,000
-
-Example:
->>> python gen_subset_idx.py --subset_size --train_size --subset_idx_save_dir
+* ImageNet train size: 1,281,167
+* CIFAR10 train size: 50,000
+* CIFAR100 train size: 50,000
+* CINIC10 train size: 90,000
 """
 import argparse
 import os
