@@ -1,3 +1,7 @@
+.PHONY: traincifar10
+traincifar10:
+	python train.py --fp16
+
 .PHONY: clean
 clean:
 	rm -rf ./wandb/

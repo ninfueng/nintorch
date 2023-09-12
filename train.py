@@ -26,8 +26,8 @@ import logging
 import os
 import sys
 import time
-import warnings
 from functools import reduce
+from pprint import pformat
 
 import torch
 import torch.distributed as dist
@@ -38,7 +38,7 @@ import wandb
 from nincore import AttrDict
 from nincore.io import load_yaml
 from nincore.time import second_to_ddhhmmss
-from nincore.utils import backup_scripts, set_logger
+from nincore.utils import backup_scripts, set_logger, filter_warn
 from timm.data import Mixup
 from timm.data.transforms_factory import create_transform
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
@@ -117,8 +117,7 @@ if __name__ == "__main__":
     # `rank` is not defined that is still fine.
     log_rank_zero = lambda info: logging.info(info) if rank == 0 else None
     start = time.perf_counter()
-    if not sys.warnoptions:
-        warnings.simplefilter("ignore")
+    filter_warn()
     args = AttrDict(vars(args))
 
     # If using `yaml-dir`, all other `args` will be discards and prioritize `args` from `yaml`.
@@ -173,7 +172,7 @@ if __name__ == "__main__":
         )
         os.makedirs(exp_path, exist_ok=True)
         set_logger(os.path.join(exp_path, "info.log"), stdout=True)
-        logging.info(args)
+        log_rank_zero(pformat(args))
 
         if yaml:
             logging.info(
@@ -186,15 +185,17 @@ if __name__ == "__main__":
 
         if args.seed is not None:
             seed_torch(args.seed)
+
         # https://discuss.ray.io/t/amp-mixed-precision-training-is-slower-than-default-precision/9842/7
         enable_tf32() if not args.fp16 else None
         disable_debug()
         set_benchmark()
 
-        logging.info(f"Run with the command line: `{cmd}`.")
+        log_rank_zero(f"Run with the command line: `{cmd}`.")
     else:
         exp_path = None
 
+    # TODO: simplify this datasets to `load_tiny_datasets`.
     if args.dataset == "cifar10":
         mean = (0.4914, 0.4822, 0.4465)
         std = (0.2023, 0.1994, 0.2010)
@@ -357,12 +358,12 @@ if __name__ == "__main__":
         persistent_workers=True,
     )
 
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if img_size == 32:
         model = construct_model_cifar(args.model_name, num_classes=num_classes)
         log_rank_zero(f"Construct a `{args.model_name}` model for CIFAR-like dataset.")
     else:
-        model = getattr(torchvision.models, args.model_name)()
+        model = getattr(torchvision.models, args.model_name)(pretrained=False, num_classes=num_classes)
         log_rank_zero(
             f"Construct a `{args.model_name}` model from `torchvision.models`"
         )
