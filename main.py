@@ -35,6 +35,9 @@ import torch.nn as nn
 import torchvision.models
 import torchvision.transforms as transforms
 import wandb
+from nincore import AttrDict
+from nincore.io import load_yaml
+from nincore.time import second_to_ddhhmmss
 from timm.data import Mixup
 from timm.data.transforms_factory import create_transform
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
@@ -46,13 +49,11 @@ from torch.utils.data import BatchSampler, DataLoader, Subset
 from torch.utils.data.distributed import DistributedSampler
 from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
 
-from nincls import NEWER_EQUAL_TORCH_170, AttrDict
-from nincls.datasets.cinic10 import CINIC10
-from nincls.models import construct_model_cifar
-from nincls.scheduler import WarmupLR
-from nincls.utils import backup_scripts, load_yaml, set_logger
-from nincls.utils.perform import enable_perform, set_random_seed
-from nincls.utils.time import second_to_ddhhmmss
+from nintorch.datasets.cinic10 import CINIC10
+from nintorch.models import construct_model_cifar
+from nintorch.scheduler import WarmupLR
+from nintorch.utils import backup_scripts, set_logger
+from nintorch.utils.perform import enable_perform, set_random_seed
 from train import test_an_epoch, train_an_epoch
 
 if __name__ == "__main__":
@@ -60,8 +61,8 @@ if __name__ == "__main__":
         description="Classification template for CIFAR10, CIFAR100, CINIC10, and ImageNet."
     )
     group = parser.add_argument_group("Project related settings.")
-    group.add_argument("--project-name", type=str, default="nincls")
-    group.add_argument("--run-name", type=str, default="nincls")
+    group.add_argument("--project-name", type=str, default="nintorch")
+    group.add_argument("--run-name", type=str, default="nintorch")
     group.add_argument("--model-log-freq", type=int, default=None)
     group.add_argument("--log-interval", type=int, default=100)
     group.add_argument("--eval-every-epoch", type=int, default=1)
@@ -331,18 +332,6 @@ if __name__ == "__main__":
     else:
         train_sampler = test_sampler = train_batch_sampler = None
 
-    if NEWER_EQUAL_TORCH_170:
-        extra_dataloader_kwargs = {"persistent_workers": True}
-        log_rank_zero(
-            "Detect `torch` newer or equal than 1.7.0, "
-            "add `persistent_workers=True` to `DataLoader`."
-        )
-    else:
-        extra_dataloader_kwargs = {}
-        log_rank_zero(
-            "Detect `torch` older than 1.7.0, not use `persistent_workers` with `DataLoader`."
-        )
-
     train_loader = DataLoader(
         train_dataset,
         # batch_size = 1 is a default value which will be overwritten by sampler.
@@ -351,7 +340,7 @@ if __name__ == "__main__":
         batch_sampler=train_batch_sampler if args.dist else None,
         num_workers=args.workers,
         pin_memory=True,
-        **extra_dataloader_kwargs,
+        persistent_workers=True,
     )
     test_loader = DataLoader(
         test_dataset,
@@ -360,7 +349,7 @@ if __name__ == "__main__":
         sampler=test_sampler if args.dist else None,
         num_workers=args.workers,
         pin_memory=True,
-        **extra_dataloader_kwargs,
+        persistent_workers=True,
     )
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -369,7 +358,9 @@ if __name__ == "__main__":
         log_rank_zero(f"Construct a `{args.model_name}` model for CIFAR-like dataset.")
     else:
         model = getattr(torchvision.models, args.model_name)()
-        log_rank_zero(f"Construct a `{args.model_name}` model from `torchvision.models`")
+        log_rank_zero(
+            f"Construct a `{args.model_name}` model from `torchvision.models`"
+        )
 
     model = model.to(device)
     if args.compile:

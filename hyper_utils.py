@@ -5,9 +5,8 @@ import sys
 from typing import List, Optional, Sequence, Union
 
 import optuna
-from optuna.trial import Trial
-
 from nincls import gprint, rprint
+from optuna.trial import Trial
 
 logger = logging.getLogger(__name__)
 trial_counter = 0

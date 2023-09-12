@@ -3,9 +3,9 @@ import os
 
 import torch
 import wandb
+from nincore import AttrDict
 from torch.cuda.amp import autocast
 
-from nincore import AttrDict
 from nintorch.utils import AvgMeter, accuracy
 
 logger = logging.getLogger(__name__)
@@ -103,13 +103,13 @@ def train_an_epoch(conf: AttrDict) -> None:
                     step=conf.epoch_idx,
                 )
 
-        if conf.warmup_scheduler is not None and not conf.warmup_scheduler.warmup_done:
+        if conf.warmup_scheduler is not None and not conf.warmup_scheduler.done:
             conf.warmup_scheduler.step()
 
     # If `conf.scheduler` is not None, start only when `conf.warmup_scheduler` is done or None.
     if (
         conf.warmup_scheduler is None
-        or conf.warmup_scheduler.warmup_done
+        or conf.warmup_scheduler.done
         and (conf.scheduler is not None)
     ):
         conf.scheduler.step()

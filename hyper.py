@@ -3,9 +3,9 @@ import argparse
 
 import joblib
 import optuna
+from nincls import gprint
 
 from hyper_utils import Suggestion, run_script
-from nincls import gprint
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Hyper searching script.")

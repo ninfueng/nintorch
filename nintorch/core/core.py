@@ -4,7 +4,6 @@ import numpy as np
 import torch
 from torch import Tensor, nn
 
-
 __all__ = [
     "get_numel_model",
     "torch_np",
