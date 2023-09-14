@@ -1,3 +1,6 @@
+default_language_version:
+  python: python3
+
 repos:
   - repo: https://github.com/psf/black
     rev: 23.9.1
@@ -10,7 +13,10 @@ repos:
     hooks:
     - id: trailing-whitespace
     - id: end-of-file-fixer
+    - id: detect-private-key
     - id: check-yaml
+    - id: check-json
+    - id: check-symlinks
     - id: check-added-large-files
     - id: debug-statements
       language_version: python3
