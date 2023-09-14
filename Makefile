@@ -18,15 +18,22 @@ clean:
 cleanall: clean
 	rm -f *.csv
 	rm -f *.pkl
-	rm -rf experiments/
+	rm -rf exps/
 	rm -rf downloads/
 	rm -rf typings/
 	rm -f subset_idx.pt
 
 .PHONY: fmt
 fmt:
-	isort --verbose . --skip __init__.py
-	black . --exclude ./experiments
+	# https://github.com/PyCQA/isort/issues/1632
+	isort . \
+		--skip __init__.py \
+		--profile black \
+		--verbose
+	black . \
+		--line-length 120 \
+		--exclude ./exps
+
 
 .PHONY: pip
 pip:

@@ -38,7 +38,7 @@ import wandb
 from nincore import AttrDict
 from nincore.io import load_yaml
 from nincore.time import second_to_ddhhmmss
-from nincore.utils import backup_scripts, set_logger, filter_warn
+from nincore.utils import backup_scripts, filter_warn, set_logger
 from timm.data import Mixup
 from timm.data.transforms_factory import create_transform
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
@@ -53,7 +53,7 @@ from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
 from nintorch.datasets.cinic10 import CINIC10
 from nintorch.models import construct_model_cifar
 from nintorch.scheduler import WarmupLR
-from nintorch.utils.perform import enable_tf32, disable_debug, set_benchmark, seed_torch
+from nintorch.utils.perform import disable_debug, enable_tf32, seed_torch, set_benchmark
 from utils import test_an_epoch, train_an_epoch
 
 if __name__ == "__main__":
@@ -158,27 +158,19 @@ if __name__ == "__main__":
     if rank == 0:
         if args.wandb:
             wandb.login()
-            wandb.init(
-                project=args.project_name, config=vars(args), allow_val_change=True
-            )
+            wandb.init(project=args.project_name, config=vars(args), allow_val_change=True)
             wandb.run.name = args.run_name
 
         exp_path = os.path.join(
-            "experiments",
-            str(datetime.datetime.now())
-            .replace(":", "-")
-            .replace(".", "-")
-            .replace(" ", "-"),
+            "exps",
+            str(datetime.datetime.now()).replace(":", "-").replace(".", "-").replace(" ", "-"),
         )
         os.makedirs(exp_path, exist_ok=True)
         set_logger(os.path.join(exp_path, "info.log"), stdout=True)
         log_rank_zero(pformat(args))
 
         if yaml:
-            logging.info(
-                "Detect `args.yaml_dir` is not None, "
-                f"use all arguments based on {args.yaml_dir}."
-            )
+            logging.info("Detect `args.yaml_dir` is not None, " f"use all arguments based on {args.yaml_dir}.")
 
         backup_scripts(["*.py", "*.sh", "*.md"], os.path.join(exp_path, "scripts"))
         cmd = "python " + reduce(lambda x, y: f"{x} {y}", sys.argv)
@@ -222,8 +214,7 @@ if __name__ == "__main__":
 
     else:
         raise NotImplementedError(
-            "Support only `cifar10`, `cifar100`, `cinic10`, and `imagenet`, "
-            f"but your input: {args.dataset}"
+            "Support only `cifar10`, `cifar100`, `cinic10`, and `imagenet`, " f"but your input: {args.dataset}"
         )
 
     normalize = transforms.Normalize(mean, std)
@@ -252,9 +243,7 @@ if __name__ == "__main__":
             ]
         )
     else:
-        raise NotImplementedError(
-            f"Detected `img_size` not in [32, 224], your `img_size`: {img_size}"
-        )
+        raise NotImplementedError(f"Detected `img_size` not in [32, 224], your `img_size`: {img_size}")
     log_rank_zero(train_transforms)
     log_rank_zero(test_transforms)
 
@@ -302,31 +291,21 @@ if __name__ == "__main__":
         )
     elif args.dataset == "cinic10":
         download_dir = os.path.join(args.download_dir, "cinic10")
-        train_dataset = CINIC10(
-            root=download_dir, mode="train", transforms=train_transforms
-        )
-        test_dataset = CINIC10(
-            root=download_dir, mode="test", transforms=test_transforms
-        )
+        train_dataset = CINIC10(root=download_dir, mode="train", transforms=train_transforms)
+        test_dataset = CINIC10(root=download_dir, mode="test", transforms=test_transforms)
     elif args.dataset == "imagenet":
         dataset_dir = os.path.expanduser(args.dataset_dir)
         log_rank_zero(f"Loading imagenet dataset from: `{dataset_dir}`")
 
-        train_dataset = ImageFolder(
-            os.path.join(dataset_dir, "train"), train_transforms
-        )
+        train_dataset = ImageFolder(os.path.join(dataset_dir, "train"), train_transforms)
         test_dataset = ImageFolder(os.path.join(dataset_dir, "val"), test_transforms)
     else:
         raise NotImplementedError(
-            "`dataset` only supports `cifar10`, `cifar100`, `cinic10`, and `imagenet` "
-            f"Your: `{args.dataset}`"
+            "`dataset` only supports `cifar10`, `cifar100`, `cinic10`, and `imagenet` " f"Your: `{args.dataset}`"
         )
 
     if args.subset_idx_load_dir is not None:
-        log_rank_zero(
-            f"Detect `args.subset_idx_load_dir is not None`."
-            "Use subset of training dataset."
-        )
+        log_rank_zero(f"Detect `args.subset_idx_load_dir is not None`." "Use subset of training dataset.")
         subset_idx = torch.load(args.subset_idx_load_dir)
         train_dataset = Subset(train_dataset, subset_idx)
         log_rank_zero(f"Using subset with training data shape: `{subset_idx.shape}`.")
@@ -364,9 +343,7 @@ if __name__ == "__main__":
         log_rank_zero(f"Construct a `{args.model_name}` model for CIFAR-like dataset.")
     else:
         model = getattr(torchvision.models, args.model_name)(pretrained=False, num_classes=num_classes)
-        log_rank_zero(
-            f"Construct a `{args.model_name}` model from `torchvision.models`"
-        )
+        log_rank_zero(f"Construct a `{args.model_name}` model from `torchvision.models`")
 
     model = model.to(device)
     if args.compile:
@@ -376,8 +353,7 @@ if __name__ == "__main__":
     if args.mixup:
         criterion = SoftTargetCrossEntropy()
         log_rank_zero(
-            f"Detect mixup, using `SoftTargetCrossEntropy` with"
-            f"label smoothing: {args.mixup_label_smoothing}"
+            f"Detect mixup, using `SoftTargetCrossEntropy` with" f"label smoothing: {args.mixup_label_smoothing}"
         )
     elif args.label_smoothing and args.mixup_label_smoothing > 0.0:
         criterion = LabelSmoothingCrossEntropy(smoothing=args.mixup_label_smoothing)
@@ -423,9 +399,7 @@ if __name__ == "__main__":
         if args.dist:
             model = nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda(gpu_idx)
             model = DDP(model, device_ids=(gpu_idx,))
-            log_rank_zero(
-                "Convert `BatchNorm` to `SyncBatchNorm` and using `torch DistributedDataParallel`."
-            )
+            log_rank_zero("Convert `BatchNorm` to `SyncBatchNorm` and using `torch DistributedDataParallel`.")
 
     if not args.dist:
         model = nn.DataParallel(model)
