@@ -3,7 +3,7 @@ import argparse
 
 import joblib
 import optuna
-from nincls import gprint
+from nincore import gprint
 
 from hyper_utils import Suggestion, run_script
 

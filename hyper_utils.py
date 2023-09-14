@@ -5,7 +5,7 @@ import sys
 from typing import List, Optional, Sequence, Union
 
 import optuna
-from nincls import gprint, rprint
+from nincore import gprint, rprint
 from optuna.trial import Trial
 
 logger = logging.getLogger(__name__)
