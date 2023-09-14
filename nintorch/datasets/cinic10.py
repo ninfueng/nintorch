@@ -1,5 +1,4 @@
 import glob
-import logging
 import os
 import tarfile
 import zipfile
@@ -7,17 +6,18 @@ from typing import Callable, List, Optional, Tuple
 
 import requests
 from PIL import Image
-from torch import Tensor
+from torch import Tensor, nn
 from torch.utils.data.dataset import Dataset
-
-logger = logging.getLogger(__file__)
 
 __all__ = ["CINIC10"]
 
 
 class CINIC10(Dataset):
     """CINIC10 dataset with a burst mode support.
-    ImageFolder 29 seconds, CINIC10 20 seconds, and Burst mode 8 seconds.
+
+    * ImageFolder: 29 seconds
+    * CINIC10    : 20 seconds
+    * Burst mode : 8  seconds
 
     Example:
     >>> dataset = CINIC10("~/datasets/cinic10", mode="train")
@@ -39,16 +39,21 @@ class CINIC10(Dataset):
     NUM_CLASSES = len(CLASSES)
 
     def __init__(
-        self, root: str, mode: str, transforms: Optional[Callable] = None
+        self,
+        root: str,
+        split: str,
+        transforms: Optional[Callable[..., nn.Module]] = None,
+        target_transforms: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
-        assert isinstance(root, str)
-        assert isinstance(mode, str)
-        mode = mode.lower()
-        assert mode in ["train", "test", "valid"]
-        self.mode = mode
-
+        assert split in [
+            "train",
+            "test",
+            "valid",
+        ], f"`split` should be [`train`, `test`, `valid`], Your {split}."
+        self.split = split
         self.root = os.path.expanduser(root)
+
         if not os.path.exists(self.root):
             os.makedirs(self.root)
             self.download_dataset()
@@ -56,28 +61,37 @@ class CINIC10(Dataset):
         data_dirs, self.labels = self.get_data_label_dirs()
         self.imgs = [Image.open(d).convert("RGB") for d in data_dirs]
         self.transforms = transforms
+        self.target_transforms = target_transforms
 
     def download_dataset(self) -> None:
-        zip_file = os.path.basename(self.DATASET_URL)
-        zip_file = os.path.join(self.root, zip_file)
-        logger.info(f"Downloading from {self.DATASET_URL}. This may take a while.")
+        """Download datasets + extract a zip file + extract a gzip +
+        remove zip and gzip files.
+        """
 
+        zipname = os.path.basename(self.DATASET_URL)
+        zipname = os.path.join(self.root, zipname)
+
+        print(f"Downloading from: {self.DATASET_URL}. This may take a while.")
         response = requests.get(self.DATASET_URL)
-        with open(zip_file, "wb") as f:
+
+        with open(zipname, "wb") as f:
             f.write(response.content)
-        with zipfile.ZipFile(zip_file, "r") as z:
+
+        with zipfile.ZipFile(zipname, "r") as z:
             z.extractall(self.root)
 
         tarname = os.path.join(self.root, "CINIC-10.tar.gz")
         with tarfile.open(tarname, "r") as t:
             t.extractall(self.root)
-        os.remove(zip_file)
+
+        os.remove(zipname)
         os.remove(tarname)
 
     def get_data_label_dirs(self) -> Tuple[List[str], List[int]]:
-        data_dir = os.path.join(self.root, self.mode)
-        data_dirs, labels = [], []
+        """Find a list image directories and a list of their labels."""
+        data_dir = os.path.join(self.root, self.split)
 
+        data_dirs, labels = [], []
         for k, v in self.CLASSES.items():
             tmp_dir = glob.glob(os.path.join(data_dir, k, "*.png"))
             data_dirs += tmp_dir
@@ -87,11 +101,19 @@ class CINIC10(Dataset):
         assert len(data_dirs) == len(labels) == 90_000
         return data_dirs, labels
 
+    def __getitem__(self, idx: int) -> Tuple[Tensor, int]:
+        img, label = self.imgs[idx], self.labels[idx]
+
+        if self.transforms is not None:
+            img = self.transforms(img)
+        if self.target_transforms is not None:
+            label = self.target_transforms(label)
+
+        return img, label
+
     def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, idx: int) -> Tuple[Tensor, int]:
-        img, label = self.imgs[idx], self.labels[idx]
-        if self.transforms is not None:
-            img = self.transforms(img)
-        return img, label
+
+if __name__ == "__main__":
+    cinic10 = CINIC10("./datasets/cinic10", "train")
