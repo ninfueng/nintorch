@@ -8,12 +8,7 @@ import torch
 logger = logging.getLogger(__file__)
 deterministic_flag = False
 
-__all__ = [
-    "seed_torch",
-    "disable_debug",
-    "enable_tf32",
-    'set_benchmark'
-]
+__all__ = ["seed_torch", "disable_debug", "enable_tf32", "set_benchmark"]
 
 
 def seed_torch(seed: int, verbose: bool = False) -> None:
@@ -51,8 +46,7 @@ def enable_tf32(verbose: bool = False) -> None:
 
         if verbose:
             logger.info(
-                "Detect an `Ampere` or a newer GPU architecture with `torch` > 1.7.0. "
-                "Enable NVIDIA `TF32` datatype."
+                "Detect an `Ampere` or a newer GPU architecture with `torch` > 1.7.0. " "Enable NVIDIA `TF32` datatype."
             )
 
 
@@ -61,13 +55,8 @@ def set_benchmark(verbose: bool = False) -> None:
     if not deterministic_flag:
         torch.backends.cudnn.benchmark = True
         if verbose:
-            logger.info(
-                "Set `torch.backends.cudnn.benchmark` to True."
-            )
+            logger.info("Set `torch.backends.cudnn.benchmark` to True.")
     else:
         torch.backends.cudnn.benchmark = False
         if verbose:
-            logger.info(
-                "Detect `DETERMINISTIC_FLAG`, "
-                "set `torch.backends.cudnn.benchmark` to False."
-            )
+            logger.info("Detect `DETERMINISTIC_FLAG`, " "set `torch.backends.cudnn.benchmark` to False.")

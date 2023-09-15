@@ -58,9 +58,7 @@ def resize_save(path: Path, dest: Path, mode: str, filename: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("")
     parser.add_argument("--imagenet-dir", type=str, default="~/datasets/imagenet/val")
-    parser.add_argument(
-        "--resized-imagenet-dir", type=str, default="~/datasets/resized-imagenet"
-    )
+    parser.add_argument("--resized-imagenet-dir", type=str, default="~/datasets/resized-imagenet")
     parser.add_argument("--mode", type=str, default="jpeg")
     parser.add_argument("--workers", type=int, default=8)
     args = parser.parse_args()
@@ -73,8 +71,6 @@ if __name__ == "__main__":
     t0 = time.perf_counter()
     print(f"Resizing, might take a while.")
     with ProcessPoolExecutor(args.workers) as e:
-        e.map(
-            partial(resize_save, imagenet_dir, resized_imagenet_dir, args.mode), files
-        )
+        e.map(partial(resize_save, imagenet_dir, resized_imagenet_dir, args.mode), files)
     diff = time.perf_counter() - t0
     print(f"Done, runtime: {diff} seconds")

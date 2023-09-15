@@ -13,7 +13,7 @@ class SE(nn.Module):
     """Squeeze-and-Excitation block."""
 
     def __init__(self, in_planes, se_planes):
-        super(SE, self).__init__()
+        super().__init__()
         self.se1 = nn.Conv2d(in_planes, se_planes, kernel_size=1, bias=True)
         self.se2 = nn.Conv2d(se_planes, in_planes, kernel_size=1, bias=True)
 
@@ -27,7 +27,7 @@ class SE(nn.Module):
 
 class Block(nn.Module):
     def __init__(self, w_in, w_out, stride, group_width, bottleneck_ratio, se_ratio):
-        super(Block, self).__init__()
+        super().__init__()
         # 1x1
         w_b = int(round(w_out * bottleneck_ratio))
         self.conv1 = nn.Conv2d(w_in, w_b, kernel_size=1, bias=False)
@@ -73,7 +73,7 @@ class Block(nn.Module):
 
 class RegNet(nn.Module):
     def __init__(self, cfg, num_classes=10):
-        super(RegNet, self).__init__()
+        super().__init__()
         self.cfg = cfg
         self.in_planes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
@@ -95,9 +95,7 @@ class RegNet(nn.Module):
         layers = []
         for i in range(depth):
             s = stride if i == 0 else 1
-            layers.append(
-                Block(self.in_planes, width, s, group_width, bottleneck_ratio, se_ratio)
-            )
+            layers.append(Block(self.in_planes, width, s, group_width, bottleneck_ratio, se_ratio))
             self.in_planes = width
         return nn.Sequential(*layers)
 
