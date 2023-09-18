@@ -1,6 +1,6 @@
-import time
-import os
 import logging
+import os
+import time
 from typing import Any, Tuple
 
 import numpy as np
@@ -8,13 +8,12 @@ import torch
 import torch.distributed as dist
 from torch.utils.data.dataloader import DataLoader
 
-
 logger = logging.getLogger(__name__)
 
-__all__ = ['AvgMeter', 'time_loader']
+__all__ = ["AvgMeter", "time_loader"]
 
 
-class AvgMeter(object):
+class AvgMeter:
     """Computes and stores the average and current value
 
     From: https://github.com/pytorch/examples/blob/main/imagenet/main.py

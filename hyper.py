@@ -21,9 +21,7 @@ if __name__ == "__main__":
     ]
 
     wrapped_run_script = lambda trial: run_script(trial, args.cmd, suggests)
-    study = optuna.create_study(
-        study_name=args.study_name, direction=args.optimize_direction
-    )
+    study = optuna.create_study(study_name=args.study_name, direction=args.optimize_direction)
     study.optimize(wrapped_run_script, n_trials=args.n_trials)
 
     trial = study.best_trial

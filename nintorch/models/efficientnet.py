@@ -26,7 +26,7 @@ class SE(nn.Module):
     """Squeeze-and-Excitation block with Swish."""
 
     def __init__(self, in_channels, se_channels):
-        super(SE, self).__init__()
+        super().__init__()
         self.se1 = nn.Conv2d(in_channels, se_channels, kernel_size=1, bias=True)
         self.se2 = nn.Conv2d(se_channels, in_channels, kernel_size=1, bias=True)
 
@@ -51,16 +51,14 @@ class Block(nn.Module):
         se_ratio=0.0,
         drop_rate=0.0,
     ):
-        super(Block, self).__init__()
+        super().__init__()
         self.stride = stride
         self.drop_rate = drop_rate
         self.expand_ratio = expand_ratio
 
         # Expansion
         channels = expand_ratio * in_channels
-        self.conv1 = nn.Conv2d(
-            in_channels, channels, kernel_size=1, stride=1, padding=0, bias=False
-        )
+        self.conv1 = nn.Conv2d(in_channels, channels, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(channels)
 
         # Depthwise conv
@@ -80,9 +78,7 @@ class Block(nn.Module):
         self.se = SE(channels, se_channels)
 
         # Output
-        self.conv3 = nn.Conv2d(
-            channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False
-        )
+        self.conv3 = nn.Conv2d(channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn3 = nn.BatchNorm2d(out_channels)
 
         # Skip connection if in and out shapes are the same (MV-V2 style)
@@ -102,7 +98,7 @@ class Block(nn.Module):
 
 class EfficientNet(nn.Module):
     def __init__(self, cfg, num_classes=10):
-        super(EfficientNet, self).__init__()
+        super().__init__()
         self.cfg = cfg
         self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(32)

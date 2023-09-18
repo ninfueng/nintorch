@@ -4,10 +4,10 @@ import os
 import torch
 import wandb
 from nincore import AttrDict
+from timm.utils import accuracy
 from torch.cuda.amp import autocast
 
 from nintorch.utils import AvgMeter
-from timm.utils import accuracy
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +78,7 @@ def train_an_epoch(conf: AttrDict) -> None:
             losses.all_reduce()
 
         # If `conf.rank == 0`, allows only every `conf.log_interval` or on the last iterations.
-        if (
-            (batch_idx + 1) % conf.log_interval == 0
-            or batch_idx == train_len - 1
-            and conf.rank == 0
-        ):
+        if (batch_idx + 1) % conf.log_interval == 0 or batch_idx == train_len - 1 and conf.rank == 0:
             first_param = conf.optimizer.param_groups[0]
             cur_lr = first_param["lr"]
             cur_weight_decay = first_param["weight_decay"]
@@ -105,11 +101,7 @@ def train_an_epoch(conf: AttrDict) -> None:
             conf.warmup_scheduler.step()
 
     # If `conf.scheduler` is not None, start only when `conf.warmup_scheduler` is done or None.
-    if (
-        conf.warmup_scheduler is None
-        or conf.warmup_scheduler.done
-        and (conf.scheduler is not None)
-    ):
+    if conf.warmup_scheduler is None or conf.warmup_scheduler.done and (conf.scheduler is not None):
         conf.scheduler.step()
 
 
@@ -137,11 +129,7 @@ def test_an_epoch(conf: AttrDict) -> None:
             top5.all_reduce()
             losses.all_reduce()
 
-        if (
-            (batch_idx + 1) % conf.log_interval == 0
-            or batch_idx == test_len - 1
-            and conf.rank == 0
-        ):
+        if (batch_idx + 1) % conf.log_interval == 0 or batch_idx == test_len - 1 and conf.rank == 0:
             msg = (
                 f"Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | "
                 f"Loss: {losses.avg / (batch_idx + 1):.3e} | "
@@ -182,7 +170,5 @@ def test_an_epoch(conf: AttrDict) -> None:
                     os.makedirs(save_dir, exist_ok=True)
                     save_model_dir = os.path.join(save_dir, "best.pth")
                     torch.save(state, save_model_dir)
-                    logger.info(
-                        f"Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}"
-                    )
+                    logger.info(f"Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}")
                     conf.best_acc = best_acc

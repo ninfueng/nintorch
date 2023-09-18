@@ -19,9 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--subset-idx-save-dir", type=str, default="subset_idx.pt")
     args = parser.parse_args()
 
-    subset_idx = np.random.choice(
-        args.train_size, size=int(args.train_size * args.fraction)
-    )
+    subset_idx = np.random.choice(args.train_size, size=int(args.train_size * args.fraction))
     subset_idx = torch.as_tensor(subset_idx, dtype=torch.int32)
     print(f"Set subset index with following shape: `{subset_idx.shape}`")
 

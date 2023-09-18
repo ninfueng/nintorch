@@ -62,17 +62,11 @@ class LambdaLayer(nn.Module):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(
-        self, in_planes: int, planes: int, stride: int = 1, option: str = "A"
-    ) -> None:
+    def __init__(self, in_planes: int, planes: int, stride: int = 1, option: str = "A") -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(
-            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
-        )
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(
-            planes, planes, kernel_size=3, stride=1, padding=1, bias=False
-        )
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
@@ -110,9 +104,7 @@ class BasicBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(
-        self, block: BasicBlock, num_blocks: List[int], num_classes: int = 10
-    ) -> None:
+    def __init__(self, block: BasicBlock, num_blocks: List[int], num_classes: int = 10) -> None:
         super().__init__()
         self.in_planes = 16
 
@@ -125,9 +117,7 @@ class ResNet(nn.Module):
 
         self.apply(_weights_init)
 
-    def _make_layer(
-        self, block: BasicBlock, planes: int, num_blocks: int, stride: int
-    ) -> nn.Sequential:
+    def _make_layer(self, block: BasicBlock, planes: int, num_blocks: int, stride: int) -> nn.Sequential:
         strides = [stride] + [1] * (num_blocks - 1)
         layers = []
         for stride in strides:

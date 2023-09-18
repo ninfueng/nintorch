@@ -76,9 +76,9 @@ class Suggestion:
             suggest = trial.suggest_loguniform(self.name, self.amin, self.amax)
         else:
             raise NotImplementedError(
-            'Expect `typename` in ("float", "categorical", "int", "uniform", "log_uniform").'
-            f'Your `typename`: {self.typename}.'
-        )
+                'Expect `typename` in ("float", "categorical", "int", "uniform", "log_uniform").'
+                f"Your `typename`: {self.typename}."
+            )
         return suggest
 
     def gen_cmd(self, suggest: Union[int, float]) -> str:
@@ -86,9 +86,7 @@ class Suggestion:
         return args
 
 
-def run_script(
-    trial: Trial, cmd: str, suggestions: List[Suggestion], timeout: Optional[int] = None
-) -> Optional[float]:
+def run_script(trial: Trial, cmd: str, suggestions: List[Suggestion], timeout: Optional[int] = None) -> Optional[float]:
     """
     Args:
         trial (Trial): Optuna Trial objects to give suggested hyper-parameters

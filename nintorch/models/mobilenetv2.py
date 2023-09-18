@@ -12,13 +12,11 @@ class Block(nn.Module):
     """expand + depthwise + pointwise"""
 
     def __init__(self, in_planes, out_planes, expansion, stride):
-        super(Block, self).__init__()
+        super().__init__()
         self.stride = stride
 
         planes = expansion * in_planes
-        self.conv1 = nn.Conv2d(
-            in_planes, planes, kernel_size=1, stride=1, padding=0, bias=False
-        )
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = nn.Conv2d(
             planes,
@@ -30,9 +28,7 @@ class Block(nn.Module):
             bias=False,
         )
         self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(
-            planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False
-        )
+        self.conv3 = nn.Conv2d(planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
         self.shortcut = nn.Sequential()
@@ -70,14 +66,12 @@ class MobileNetV2(nn.Module):
     ]
 
     def __init__(self, num_classes=10):
-        super(MobileNetV2, self).__init__()
+        super().__init__()
         # NOTE: change conv1 stride 2 -> 1 for CIFAR10
         self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(32)
         self.layers = self._make_layers(in_planes=32)
-        self.conv2 = nn.Conv2d(
-            320, 1280, kernel_size=1, stride=1, padding=0, bias=False
-        )
+        self.conv2 = nn.Conv2d(320, 1280, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn2 = nn.BatchNorm2d(1280)
         self.linear = nn.Linear(1280, num_classes)
 

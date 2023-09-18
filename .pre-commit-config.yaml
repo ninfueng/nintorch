@@ -53,9 +53,9 @@ repos:
 
   - repo: local
     hooks:
-    - id: clean
-      name: clean
-      entry: bash -c 'make clean'
+    - id: cleanall
+      name: cleanall
+      entry: bash -c 'make cleanall'
       language: system
       type: [make]
       pass_filenames: false

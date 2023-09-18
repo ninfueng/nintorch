@@ -9,14 +9,10 @@ import torch.nn.functional as F
 
 class BasicBlock(nn.Module):
     def __init__(self, in_planes, planes, stride=1):
-        super(BasicBlock, self).__init__()
-        self.conv1 = nn.Conv2d(
-            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
-        )
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(
-            planes, planes, kernel_size=3, stride=1, padding=1, bias=False
-        )
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
@@ -27,9 +23,7 @@ class BasicBlock(nn.Module):
             )
 
         # SE layers
-        self.fc1 = nn.Conv2d(
-            planes, planes // 16, kernel_size=1
-        )  # Use nn.Conv2d instead of nn.Linear
+        self.fc1 = nn.Conv2d(planes, planes // 16, kernel_size=1)  # Use nn.Conv2d instead of nn.Linear
         self.fc2 = nn.Conv2d(planes // 16, planes, kernel_size=1)
 
     def forward(self, x):
@@ -50,20 +44,14 @@ class BasicBlock(nn.Module):
 
 class PreActBlock(nn.Module):
     def __init__(self, in_planes, planes, stride=1):
-        super(PreActBlock, self).__init__()
+        super().__init__()
         self.bn1 = nn.BatchNorm2d(in_planes)
-        self.conv1 = nn.Conv2d(
-            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
-        )
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(
-            planes, planes, kernel_size=3, stride=1, padding=1, bias=False
-        )
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
 
         if stride != 1 or in_planes != planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, planes, kernel_size=1, stride=stride, bias=False)
-            )
+            self.shortcut = nn.Sequential(nn.Conv2d(in_planes, planes, kernel_size=1, stride=stride, bias=False))
 
         # SE layers
         self.fc1 = nn.Conv2d(planes, planes // 16, kernel_size=1)
@@ -88,7 +76,7 @@ class PreActBlock(nn.Module):
 
 class SENet(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10):
-        super(SENet, self).__init__()
+        super().__init__()
         self.in_planes = 64
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
