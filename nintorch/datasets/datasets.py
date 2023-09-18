@@ -1,8 +1,20 @@
 from typing import Any, Callable, Optional
 
+import cv2
+import numpy as np
 from torchvision.datasets import ImageFolder
 from torchvision.datasets.folder import default_loader
 from tqdm import tqdm
+
+__all__ = ["PreloadImageFolder", "cv_loader", "pil_loader"]
+
+pil_loader = default_loader
+
+
+def cv_loader(img_dir: str) -> np.ndarray:
+    img = cv2.imread(img_dir, cv2.IMREAD_COLOR)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return img
 
 
 class PreloadImageFolder(ImageFolder):
