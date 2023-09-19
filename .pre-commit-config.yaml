@@ -6,7 +6,14 @@ repos:
     rev: 23.9.1
     hooks:
       - id: black-jupyter
-        args: ['--line-length', '120', '--exclude', './exps']
+        args: [
+          '--line-length',
+          '120',
+          '--target-version',
+          'py311',
+          '--exclude',
+          './exps',
+        ]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.2.0
@@ -35,10 +42,18 @@ repos:
           [
                 '--skip',
                 '__init__.py',
+		        '--line-length',
+                '120',
                 '--profile',
                 'black',
-                '--verbose',
-                '--filter-files'
+                '--multi-line',
+                '3',
+                '--trailing-comma',
+                '--force-grid-wrap',
+                '0',
+                '--use-parentheses',
+                '--ensure-newline-before-comments',
+                '--filter-files',
           ]
 
   - repo: local

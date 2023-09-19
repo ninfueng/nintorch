@@ -17,6 +17,7 @@ def cv_loader(img_dir: str) -> np.ndarray:
     return img
 
 
+# TODO: add supports to albumentations.
 class PreloadImageFolder(ImageFolder):
     """Load all images into a list, but may consume a high RAM memory.
 

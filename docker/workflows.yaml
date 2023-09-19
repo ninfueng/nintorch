@@ -1,0 +1,30 @@
+# Put this on `.github/workflows/workflows.yaml`
+name: pytest
+
+# Trigger this workflows on these events:
+on:
+  push:
+    [master]
+  pull_request:
+    [master]
+
+# Code that runs on cloud.
+jobs:
+  build:
+    # Docker environment:
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allows to access this repository
+        uses: actions/checkout@v4
+
+      - run: pytest
+        uses:
+
+      # Keep results of testing as in 30 days
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: pytest-report
+          path: pytest-report/
+          retention-days: 30

@@ -12,7 +12,7 @@ def convert_layer(
     replace_params: bool = True,
     copy: bool = False,
     *args,
-    **kwargs
+    **kwargs,
 ) -> nn.Module:
     """Convert all `target_module` layer in `module` to `replace_module`.
 

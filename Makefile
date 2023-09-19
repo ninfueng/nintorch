@@ -26,14 +26,22 @@ cleanall: clean
 .PHONY: fmt
 fmt:
 	# https://github.com/PyCQA/isort/issues/1632
+	# https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html
+	find . -iname *.py | xargs pyupgrade
 	isort . \
 		--skip __init__.py \
+		--line-length 120 \
 		--profile black \
-		--verbose
+		--multi-line 3 \
+		--trailing-comma \
+		--force-grid-wrap 0 \
+		--use-parentheses \
+		--ensure-newline-before-comments \
+		--filter-files
 	black . \
 		--line-length 120 \
-		--exclude ./exps
-
+		--exclude ./exps \
+		--target-version py311
 
 .PHONY: pip
 pip:
