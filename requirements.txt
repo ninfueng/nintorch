@@ -1,1 +1,7 @@
-nincore
+numpy
+albumentations
+tqdm
+scikit-learn
+pytest
+torch
+torchvision

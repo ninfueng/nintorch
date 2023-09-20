@@ -1,4 +1,4 @@
-# Project related settings
+---
 project_name: "resnet20_cifar10"
 run_name: "resnet20_cifar10.yaml"
 model-log-freq: null

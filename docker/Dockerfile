@@ -1,21 +1,16 @@
+# Run an interactive session: sudo docker run -it --rm --gpus all nintorch
 ARG PYTORCH="2.0.1"
-ARG CUDA="11.8"
-ARG CUDNN="8"
+ARG CUDA   ="11.7"
+ARG CUDNN  ="8"
 
 FROM pytorch/pytorch:${PYTORCH}-cuda${CUDA}-cudnn${CUDNN}-devel
 
 RUN conda update -n base -c defaults conda
-RUN echo "Install Python packages."
-RUN pip3 install \
+RUN pip3 install --no-cache \
     albumentations \
     seaborn \
-    ttach \
     timm \
-    cleanlab \
-    cleanvision \
     wandb \
-    catalyst \
-    pytorch_optimizer \
     pybind11 \
     datasets \
     transformers \
@@ -23,23 +18,21 @@ RUN pip3 install \
     pre-commit \
     torchprofile \
     webdataset \
-    "black[jupyter]" \
-    isort
+    ttach \
+    cleanlab \
+    cleanvision \
+    catalyst \
+    pytorch_optimizer
 
-RUN echo "Install Ubuntu packages."
 RUN \
-    apt update && \
-    apt upgrade && \
+    apt update -y && \
+    apt upgrade -y && \
     apt install --no-install-recommends -y \
         wget \
         curl \
         build-essential \
+        ninja-build \
         tar \
-        zip \
-        htop \
-        openssl \
-        ninja
+        zip
 
-# WORKDIR /usr/
-
-# sudo docker run -it --rm --gpus all nintorch
+WORKDIR /workspace

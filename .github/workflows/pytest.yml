@@ -1,0 +1,42 @@
+---
+name: ct
+
+# Trigger this workflows on these events:
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    # Tests everyday at 0:00.
+    - cron: '0 0 * * *'
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout this github repository
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: pip
+
+      - name: pip install dependencies
+        run: |
+          pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip3 install numpy albumentations tqdm scikit-learn PyYAML pytest
+          pip3 install git+https://github.com/ninfueng/nincore.git@master
+          python setup.py install
+
+      - name: run pytest
+        run: pytest ./tests
+
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: pytest-report
+          path: pytest-report/
+          retention-days: 30

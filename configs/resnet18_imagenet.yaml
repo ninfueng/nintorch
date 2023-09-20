@@ -1,3 +1,4 @@
+---
 project_name: "resnet18_imagenet"
 run_name: "resnet18_imagenet.yaml"
 model-log-freq: null
