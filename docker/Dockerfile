@@ -1,7 +1,7 @@
 # Run an interactive session: sudo docker run -it --rm --gpus all nintorch
 ARG PYTORCH="2.0.1"
-ARG CUDA   ="11.7"
-ARG CUDNN  ="8"
+ARG CUDA="11.7"
+ARG CUDNN="8"
 
 FROM pytorch/pytorch:${PYTORCH}-cuda${CUDA}-cudnn${CUDNN}-devel
 
@@ -36,3 +36,4 @@ RUN \
         zip
 
 WORKDIR /workspace
+ENTRYPOINT ["/bin/bash"]

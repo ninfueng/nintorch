@@ -1,17 +1,23 @@
+import time
 from functools import reduce
-from typing import Dict, Sequence, Tuple
+from typing import Dict, Sequence, Union
 
 import torch
+from nincore.utils import AvgMeter
 from torch import Tensor, nn
+from torch.nn.utils import prune
 
-__all__ = ["count_params", "count_macs", "count_size", "count_sparse"]
+__all__ = ["count_params", "count_macs", "count_size", "count_sparse", "count_latency"]
 
 
+@torch.no_grad()
 def count_params(
     model: nn.Module,
     count_only_requires_grad: bool = False,
     count_only_nonzero: bool = False,
-) -> int:
+    count_bias: bool = True,
+    return_layers: bool = False,
+) -> Union[int, Dict[str, int]]:
     """Return a number of parameters with `require_grad=True` of `nn.Module`.
 
     Default = counting all parameters and with both zero and nonzero.
@@ -20,24 +26,40 @@ def count_params(
         model: a model to be count
         count_only_requires_grad: count only parameters with require_grad=True
         count_only_nonzero: count only nonzero parameters
+        return_layers: return a dict with layer by layer parameters.
     """
-    if count_only_nonzero:
-        # Tensor supports a `nonzero()` attribute.
-        all_params = [
-            param.count_nonzero().detach().numpy()
-            for param in model.parameters()
-            # If `count_only_requires_grad = False`, all parameters counted.
-            # If `count_only_requires_grad = True`, only `required_grad=True` counted.
-            if not count_only_requires_grad or param.requires_grad
-        ]
+    # If `count_only_requires_grad = False`, all parameters counted.
+    # If `count_only_requires_grad = True`, only `required_grad=True` counted.
+    all_params = []
+    all_params_dict = {}
+
+    for name, param in model.named_parameters():
+        if not count_bias and name.find("bias") > -1:
+            continue
+
+        if not count_only_requires_grad or param.requires_grad:
+            if count_only_nonzero:
+                nonzero = param.count_nonzero().detach().numpy()
+                if not return_layers:
+                    all_params.append(nonzero)
+                else:
+                    all_params_dict.update({name: nonzero})
+
+            else:
+                numel = param.numel()
+                if not return_layers:
+                    all_params.append(numel)
+                else:
+                    all_params_dict.update({name: numel})
+
+    if not return_layers:
+        numel = reduce(lambda x, y: x + y, all_params)
+        return numel
     else:
-        all_params = [
-            param.numel() for param in model.parameters() if not count_only_requires_grad or param.requires_grad
-        ]
-    numel = reduce(lambda x, y: x + y, all_params)
-    return numel
+        return all_params_dict
 
 
+@torch.no_grad()
 def count_size(
     model: nn.Module,
     bits: int = 32,
@@ -54,9 +76,10 @@ def count_size(
         model,
         count_only_requires_grad=count_only_requires_grad,
         count_only_nonzero=count_only_nonzero,
+        return_layers=False,
     )
-    size, unit = numel * bits, "B"
-
+    size = numel * bits
+    unit = "B"
     if size >= GB:
         size = size / GB
         unit = "GB"
@@ -70,6 +93,7 @@ def count_size(
 
 
 # While can using with `torchprofile.count_mac` directly, but fn is just for a reminder.
+@torch.no_grad()
 def count_macs(
     model: nn.Module,
     input_size: Sequence[int],
@@ -86,30 +110,55 @@ def count_macs(
     return macs
 
 
-def count_sparse(model: nn.Module, skip_bias: bool = True) -> Tuple[Tensor, Dict[str, Tensor]]:
+@torch.no_grad()
+def count_sparse(
+    model: nn.Module,
+    count_bias: bool = True,
+    return_layers: bool = False,
+) -> Union[float, Dict[str, float]]:
     """Measure sparsity given `nn.Module`.
 
     If able to detect `torch.nn.utils.prune` will looks for `model.named_buffers`
     instead of `model.named_parameters`.
     """
     # TODO: maybe using `AvgMeter` instead?
-    name_sparse, numels, num_zeros = {}, 0, 0
-    is_pruned = nn.utils.prune.is_pruned(model)
+    is_pruned = prune.is_pruned(model)
     if is_pruned:
-        named_params = model.named_buffers()
+        named_paramaters = model.named_buffers()
     else:
-        named_params = model.named_parameters()
+        named_paramaters = model.named_parameters()
 
-    for name, param in named_params:
-        if skip_bias and name.find("bias") > -1:
+    all_sparse_dict = {}
+    sparses = AvgMeter()
+
+    for name, param in named_paramaters:
+        if not count_bias and name.find("bias") > -1:
             continue
-        zero_mask = torch.where(param == 0.0, torch.ones_like(param), torch.zeros_like(param))
-        num_zero, numel = zero_mask.sum(), param.numel()
+
+        numel = param.numel()
+        num_zero = numel - param.count_nonzero()
         sparse = num_zero / numel
 
-        numels += numel
-        num_zeros += num_zero
-        name_sparse.update({name: sparse})
+        if return_layers:
+            all_sparse_dict.update({name: sparse})
+        else:
+            sparses.update(sparse.item(), numel)
 
-    sparses = num_zeros / numels
-    return sparses, name_sparse
+    if return_layers:
+        return all_sparse_dict
+    else:
+        return sparses.avg
+
+
+@torch.no_grad()
+def count_latency(model: nn.Module, dummy_input: Tensor, n_warmup: int = 20, n_test: int = 100) -> float:
+    model.eval()
+    for _ in range(n_warmup):
+        _ = model(dummy_input)
+
+    t1 = time.perf_counter()
+    for _ in range(n_test):
+        _ = model(dummy_input)
+    t2 = time.perf_counter()
+
+    return (t2 - t1) / n_test
