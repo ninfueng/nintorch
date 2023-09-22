@@ -2,7 +2,7 @@ from typing import Callable
 
 import torch.nn as nn
 
-__all__ = ["convert_layer"]
+__all__ = ['convert_layer']
 
 
 def convert_layer(
@@ -110,7 +110,7 @@ def convert_layer(
         else:
             raise NotImplementedError()
 
-    if hasattr(module, "qconfig"):
+    if hasattr(module, 'qconfig'):
         module_output.qconfig = module.qconfig
 
     for name, child in module.named_children():
@@ -130,7 +130,7 @@ def convert_layer(
     return module_output
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from torchvision.models import resnet18
 
     class AnotherLinear(nn.Linear):
@@ -143,9 +143,9 @@ if __name__ == "__main__":
     model = convert_layer(model, nn.BatchNorm2d, nn.SyncBatchNorm, True)
     model = convert_layer(model, nn.Linear, AnotherLinear, True)
     model = convert_layer(model, nn.Conv2d, nn.ConvTranspose2d, True)
-    print("Convert ResNet18")
-    print("Convert `BatchNorm2d -> SyncBatchNorm`")
-    print("Convert `Linear -> AnotherLinear`")
-    print("Convert `Conv2d -> Conv2dTransposed2d`")
+    print('Convert ResNet18')
+    print('Convert `BatchNorm2d -> SyncBatchNorm`')
+    print('Convert `Linear -> AnotherLinear`')
+    print('Convert `Conv2d -> Conv2dTransposed2d`')
 
     print(model)

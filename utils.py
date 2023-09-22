@@ -80,20 +80,20 @@ def train_an_epoch(conf: AttrDict) -> None:
         # If `conf.rank == 0`, allows only every `conf.log_interval` or on the last iterations.
         if (batch_idx + 1) % conf.log_interval == 0 or batch_idx == train_len - 1 and conf.rank == 0:
             first_param = conf.optimizer.param_groups[0]
-            cur_lr = first_param["lr"]
-            cur_weight_decay = first_param["weight_decay"]
+            cur_lr = first_param['lr']
+            cur_weight_decay = first_param['weight_decay']
             msg = (
-                f"Train Epoch {conf.epoch_idx} ({batch_idx + 1}/{train_len}) | "
-                f"Loss: {losses.avg / (batch_idx + 1):.3e} | "
-                f"Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | "
-                f"Decay: {cur_weight_decay:.3e} | "
-                f"Lr: {cur_lr:.3e} |"
+                f'Train Epoch {conf.epoch_idx} ({batch_idx + 1}/{train_len}) | '
+                f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
+                f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+                f'Decay: {cur_weight_decay:.3e} | '
+                f'Lr: {cur_lr:.3e} |'
             )
             logging.info(msg)
 
             if conf.wandb and batch_idx == train_len - 1:
                 wandb.log(
-                    {"train_loss": losses.avg, "train_acc": top1.avg},
+                    {'train_loss': losses.avg, 'train_acc': top1.avg},
                     step=conf.epoch_idx,
                 )
 
@@ -131,16 +131,16 @@ def test_an_epoch(conf: AttrDict) -> None:
 
         if (batch_idx + 1) % conf.log_interval == 0 or batch_idx == test_len - 1 and conf.rank == 0:
             msg = (
-                f"Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | "
-                f"Loss: {losses.avg / (batch_idx + 1):.3e} | "
-                f"Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | "
+                f'Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
+                f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
+                f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
             )
             logging.info(msg)
 
             if batch_idx == test_len - 1:
                 if conf.wandb:
                     wandb.log(
-                        {"test_loss": losses.avg, "test_acc": top1.avg},
+                        {'test_loss': losses.avg, 'test_acc': top1.avg},
                         step=conf.epoch_idx,
                     )
 
@@ -166,9 +166,9 @@ def test_an_epoch(conf: AttrDict) -> None:
                     if conf.fp16:
                         state.update(scaler_state_dict=conf.scaler.state_dict())
 
-                    save_dir = os.path.join(conf.exp_path, "checkpoint")
+                    save_dir = os.path.join(conf.exp_path, 'checkpoint')
                     os.makedirs(save_dir, exist_ok=True)
-                    save_model_dir = os.path.join(save_dir, "best.pth")
+                    save_model_dir = os.path.join(save_dir, 'best.pth')
                     torch.save(state, save_model_dir)
-                    logger.info(f"Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}")
+                    logger.info(f'Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}')
                     conf.best_acc = best_acc

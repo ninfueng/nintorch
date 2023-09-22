@@ -9,7 +9,7 @@ from PIL import Image
 from torch import Tensor, nn
 from torch.utils.data.dataset import Dataset
 
-__all__ = ["CINIC10"]
+__all__ = ['CINIC10']
 
 
 class CINIC10(Dataset):
@@ -20,21 +20,21 @@ class CINIC10(Dataset):
     * Burst mode : 8  seconds
 
     Example:
-    >>> dataset = CINIC10("~/datasets/cinic10", mode="train")
+    >>> dataset = CINIC10('~/datasets/cinic10', mode='train')
     """
 
-    DATASET_URL = "https://datashare.ed.ac.uk/download/DS_10283_3192.zip"
+    DATASET_URL = 'https://datashare.ed.ac.uk/download/DS_10283_3192.zip'
     CLASSES = {
-        "airplane": 0,
-        "automobile": 1,
-        "bird": 2,
-        "cat": 3,
-        "deer": 4,
-        "dog": 5,
-        "frog": 6,
-        "horse": 7,
-        "ship": 8,
-        "truck": 9,
+        'airplane': 0,
+        'automobile': 1,
+        'bird': 2,
+        'cat': 3,
+        'deer': 4,
+        'dog': 5,
+        'frog': 6,
+        'horse': 7,
+        'ship': 8,
+        'truck': 9,
     }
     NUM_CLASSES = len(CLASSES)
 
@@ -47,10 +47,10 @@ class CINIC10(Dataset):
     ) -> None:
         super().__init__()
         assert split in [
-            "train",
-            "test",
-            "valid",
-        ], f"`split` should be [`train`, `test`, `valid`], Your {split}."
+            'train',
+            'test',
+            'valid',
+        ], f'`split` should be [`train`, `test`, `valid`], Your {split}.'
         self.split = split
         self.root = os.path.expanduser(root)
 
@@ -59,7 +59,7 @@ class CINIC10(Dataset):
             self.download_dataset()
 
         data_dirs, self.labels = self.get_data_label_dirs()
-        self.imgs = [Image.open(d).convert("RGB") for d in data_dirs]
+        self.imgs = [Image.open(d).convert('RGB') for d in data_dirs]
         self.transforms = transforms
         self.target_transforms = target_transforms
 
@@ -71,17 +71,17 @@ class CINIC10(Dataset):
         zipname = os.path.basename(self.DATASET_URL)
         zipname = os.path.join(self.root, zipname)
 
-        print(f"Downloading from: {self.DATASET_URL}. This may take a while.")
+        print(f'Downloading from: {self.DATASET_URL}. This may take a while.')
         response = requests.get(self.DATASET_URL)
 
-        with open(zipname, "wb") as f:
+        with open(zipname, 'wb') as f:
             f.write(response.content)
 
-        with zipfile.ZipFile(zipname, "r") as z:
+        with zipfile.ZipFile(zipname, 'r') as z:
             z.extractall(self.root)
 
-        tarname = os.path.join(self.root, "CINIC-10.tar.gz")
-        with tarfile.open(tarname, "r") as t:
+        tarname = os.path.join(self.root, 'CINIC-10.tar.gz')
+        with tarfile.open(tarname, 'r') as t:
             t.extractall(self.root)
 
         os.remove(zipname)
@@ -93,7 +93,7 @@ class CINIC10(Dataset):
 
         data_dirs, labels = [], []
         for k, v in self.CLASSES.items():
-            tmp_dir = glob.glob(os.path.join(data_dir, k, "*.png"))
+            tmp_dir = glob.glob(os.path.join(data_dir, k, '*.png'))
             data_dirs += tmp_dir
             tmp_label = [v for _ in tmp_dir]
             labels += tmp_label
@@ -115,5 +115,5 @@ class CINIC10(Dataset):
         return len(self.labels)
 
 
-if __name__ == "__main__":
-    cinic10 = CINIC10("./datasets/cinic10", "train")
+if __name__ == '__main__':
+    cinic10 = CINIC10('./datasets/cinic10', 'train')

@@ -1,6 +1,6 @@
 """ShuffleNet in PyTorch.
 
-See the paper "ShuffleNet: An Extremely Efficient Convolutional Neural Network for Mobile Devices" for more details.
+See the paper 'ShuffleNet: An Extremely Efficient Convolutional Neural Network for Mobile Devices' for more details.
 """
 import torch
 import torch.nn as nn
@@ -59,9 +59,9 @@ class Bottleneck(nn.Module):
 class ShuffleNet(nn.Module):
     def __init__(self, cfg):
         super().__init__()
-        out_planes = cfg["out_planes"]
-        num_blocks = cfg["num_blocks"]
-        groups = cfg["groups"]
+        out_planes = cfg['out_planes']
+        num_blocks = cfg['num_blocks']
+        groups = cfg['groups']
 
         self.conv1 = nn.Conv2d(3, 24, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(24)
@@ -99,12 +99,12 @@ class ShuffleNet(nn.Module):
 
 
 def ShuffleNetG2():
-    cfg = {"out_planes": [200, 400, 800], "num_blocks": [4, 8, 4], "groups": 2}
+    cfg = {'out_planes': [200, 400, 800], 'num_blocks': [4, 8, 4], 'groups': 2}
     return ShuffleNet(cfg)
 
 
 def ShuffleNetG3():
-    cfg = {"out_planes": [240, 480, 960], "num_blocks": [4, 8, 4], "groups": 3}
+    cfg = {'out_planes': [240, 480, 960], 'num_blocks': [4, 8, 4], 'groups': 3}
     return ShuffleNet(cfg)
 
 

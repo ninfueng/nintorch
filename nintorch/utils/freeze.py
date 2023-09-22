@@ -4,7 +4,7 @@ from typing import List, Union
 import torch.nn as nn
 from nincore import multi_getattr, to_1tuple
 
-logger = logging.getLogger("__file__")
+logger = logging.getLogger('__file__')
 
 try:
     from torch.nn.modules.batchnorm import _NormBase
@@ -17,7 +17,7 @@ except ImportError:
     BaseNorm = _BatchNorm
 
 
-__all__ = ["freeze_norm", "freeze_except"]
+__all__ = ['freeze_norm', 'freeze_except']
 
 
 def freeze_norm(model: nn.Module, verbose: bool = False) -> None:
@@ -36,12 +36,12 @@ def freeze_norm(model: nn.Module, verbose: bool = False) -> None:
     for n, m in model.named_modules():
         if isinstance(m, BaseNorm):
             m.track_running_stats = False
-            if hasattr(m, "weight"):
+            if hasattr(m, 'weight'):
                 m.weight.requires_grad_(False)
-            elif hasattr(m, "bias"):
+            elif hasattr(m, 'bias'):
                 m.bias.requires_grad_(False)
             if verbose:
-                logger.info(f"`{n}` is freeze with `freeze_norm`.")
+                logger.info(f'`{n}` is freeze with `freeze_norm`.')
 
 
 def freeze_except(model: nn.Module, except_names: Union[List[str], str]) -> nn.Module:

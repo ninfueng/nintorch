@@ -6,7 +6,7 @@ from nincore import to_1tuple
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler, SequentialLR, StepLR
 
-__all__ = ["WarmupLR", "insert_warmup"]
+__all__ = ['WarmupLR', 'insert_warmup']
 
 
 class WarmupLR(LRScheduler):
@@ -31,7 +31,7 @@ class WarmupLR(LRScheduler):
     """
 
     def __init__(self, optimizer: Optimizer, max_iterations: int, max_lr: Optional[float] = None) -> None:
-        self.max_lr = max_lr if max_lr is not None else optimizer.param_groups[0]["lr"]
+        self.max_lr = max_lr if max_lr is not None else optimizer.param_groups[0]['lr']
         self.max_iterations = max_iterations
         self.done = False
         super().__init__(optimizer)
@@ -45,7 +45,7 @@ class WarmupLR(LRScheduler):
             return groups
         else:
             self.done = True
-            return [group["lr"] for group in self.optimizer.param_groups]
+            return [group['lr'] for group in self.optimizer.param_groups]
 
 
 # TODO: testing this functions
@@ -57,11 +57,11 @@ def insert_warmup(
 ) -> LRScheduler:
     """Insert `WarmupLR` and `schedulers` to `SequentialLR`."""
 
-    max_lr = optimizer.param_groups[0]["lr"]
+    max_lr = optimizer.param_groups[0]['lr']
     schedulers = list(to_1tuple(schedulers))
     assert len(schedulers) == len(milestones) - 1, (
-        "Length of schedulers should be equal length of milestones minus one. "
-        f"Your {len(schedulers)=} != {len(milestones)}."
+        'Length of schedulers should be equal length of milestones minus one. '
+        f'Your {len(schedulers)=} != {len(milestones)}.'
     )
 
     warmup_scheduler = WarmupLR(optimizer, max_iterations, max_lr)
@@ -71,7 +71,7 @@ def insert_warmup(
     return scheduler_lr_with_warmup
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from torch.optim.lr_scheduler import StepLR
 
     model = nn.Linear(10, 1)

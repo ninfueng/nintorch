@@ -23,10 +23,10 @@ def test_count_sparse():
         model = nn.Linear(1, 10, bias=True)
         model.weight = nn.Parameter(torch.zeros(1, 10))
         sparse_dict = count_sparse(model, count_bias=True, return_layers=True)
-        torch.testing.assert_close(sparse_dict["weight"].item(), 1.0)
-        torch.testing.assert_close(sparse_dict["bias"].item(), 0.0)
+        torch.testing.assert_close(sparse_dict['weight'].item(), 1.0)
+        torch.testing.assert_close(sparse_dict['bias'].item(), 0.0)
 
         model = nn.Linear(1, 10, bias=True)
-        prune.l1_unstructured(model, "weight", 0.5)
+        prune.l1_unstructured(model, 'weight', 0.5)
         sparse = count_sparse(model, count_bias=True, return_layers=False)
         torch.testing.assert_close(sparse, 0.5)

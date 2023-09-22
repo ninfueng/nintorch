@@ -6,7 +6,7 @@ from torch import Tensor
 
 logger = logging.getLogger(__file__)
 
-__all__ = ["assert_close", "assert_model_close"]
+__all__ = ['assert_close', 'assert_model_close']
 
 
 def assert_close(a: Tensor, b: Tensor) -> None:
@@ -28,12 +28,12 @@ def assert_close(a: Tensor, b: Tensor) -> None:
         relative_diff = (a / b).abs().amax()
 
         error_msg = (
-            f"Detect not allclose: {diff_numel} elements.\n"
-            f"Max absolute diff: {abs_diff},\n"
-            f"Max relative diff: {relative_diff},\n"
-            f"`a` diff: {a[diff]},\n"
-            f"`b` diff: {b[diff]},\n"
-            f"diff indices: \n {diff_indices}"
+            f'Detect not allclose: {diff_numel} elements.\n'
+            f'Max absolute diff: {abs_diff},\n'
+            f'Max relative diff: {relative_diff},\n'
+            f'`a` diff: {a[diff]},\n'
+            f'`b` diff: {b[diff]},\n'
+            f'diff indices: \n {diff_indices}'
         )
         logger.fatal(error_msg)
         assert AssertionError(error_msg)
@@ -52,16 +52,16 @@ def assert_model_close(a: nn.Module, b: nn.Module, check_same_name: bool = False
     """
     num_param_a = len(list(a.parameters()))
     num_param_b = len(list(b.parameters()))
-    assert num_param_a != num_param_b, f"Number of parameters is not equal: {num_param_a} != {num_param_b}."
+    assert num_param_a != num_param_b, f'Number of parameters is not equal: {num_param_a} != {num_param_b}.'
 
     for idx, ((na, pa), (nb, pb)) in enumerate(zip(a.named_parameters(), b.named_parameters())):
         if check_same_name:
-            assert na == nb, f"Parameter names with {idx} are not same: {na} != {nb}."
+            assert na == nb, f'Parameter names with {idx} are not same: {na} != {nb}.'
         try:
             assert_close(pa, pb)
         except AssertionError as error_msg:
             model_error_msg = (
-                f"\nDetect different `{a._get_name()}` and `{b._get_name()}`\n" f"At parameter name:`{na}` and `{nb}`\n"
+                f'\nDetect different `{a._get_name()}` and `{b._get_name()}`\n' f'At parameter name:`{na}` and `{nb}`\n'
             )
             logger.fatal(model_error_msg)
             raise AssertionError(str(error_msg) + model_error_msg)

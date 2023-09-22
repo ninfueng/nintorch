@@ -35,13 +35,13 @@ import torch.nn.init as init
 from torch import Tensor
 
 __all__ = [
-    "ResNet",
-    "resnet20",
-    "resnet32",
-    "resnet44",
-    "resnet56",
-    "resnet110",
-    "resnet1202",
+    'ResNet',
+    'resnet20',
+    'resnet32',
+    'resnet44',
+    'resnet56',
+    'resnet110',
+    'resnet1202',
 ]
 
 
@@ -62,7 +62,7 @@ class LambdaLayer(nn.Module):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes: int, planes: int, stride: int = 1, option: str = "A") -> None:
+    def __init__(self, in_planes: int, planes: int, stride: int = 1, option: str = 'A') -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -71,7 +71,7 @@ class BasicBlock(nn.Module):
 
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != planes:
-            if option == "A":
+            if option == 'A':
                 """
                 For CIFAR10 ResNet paper uses option A.
                 """
@@ -79,11 +79,11 @@ class BasicBlock(nn.Module):
                     lambda x: F.pad(
                         x[:, :, ::2, ::2],
                         (0, 0, 0, 0, planes // 4, planes // 4),
-                        "constant",
+                        'constant',
                         0,
                     )
                 )
-            elif option == "B":
+            elif option == 'B':
                 self.shortcut = nn.Sequential(
                     nn.Conv2d(
                         in_planes,

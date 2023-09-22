@@ -27,7 +27,7 @@ cleanall: clean
 fmt:
 	# https://github.com/PyCQA/isort/issues/1632
 	# https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html
-	find . -iname *.py | xargs pyupgrade
+	find -iname "*.py" | xargs pyupgrade
 	isort . \
 		--skip __init__.py \
 		--line-length 120 \
@@ -41,7 +41,13 @@ fmt:
 	black . \
 		--line-length 120 \
 		--exclude ./exps \
-		--target-version py311
+		--target-version py311 \
+		--skip-string-normalization
+
+.PHONY: fmtstr
+fmtstr:
+	find -iname "*.py" | xargs sed -i s/\"/\'/g
+	find -iname "*.py" | xargs sed -i s/\'\'\'/\"\"\"/g
 
 .PHONY: pip
 pip:

@@ -130,5 +130,5 @@ def test():
     print(y.size())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     test()

@@ -1,6 +1,6 @@
 """ShuffleNetV2 in PyTorch.
 
-See the paper "ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design" for more details.
+See the paper 'ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design' for more details.
 """
 import torch
 import torch.nn as nn
@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 class ShuffleBlock(nn.Module):
     def __init__(self, groups=2):
-        super(ShuffleBlock, self).__init__()
+        super().__init__()
         self.groups = groups
 
     def forward(self, x):
@@ -21,7 +21,7 @@ class ShuffleBlock(nn.Module):
 
 class SplitBlock(nn.Module):
     def __init__(self, ratio):
-        super(SplitBlock, self).__init__()
+        super().__init__()
         self.ratio = ratio
 
     def forward(self, x):
@@ -31,7 +31,7 @@ class SplitBlock(nn.Module):
 
 class BasicBlock(nn.Module):
     def __init__(self, in_channels, split_ratio=0.5):
-        super(BasicBlock, self).__init__()
+        super().__init__()
         self.split = SplitBlock(split_ratio)
         in_channels = int(in_channels * split_ratio)
         self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=1, bias=False)
@@ -62,7 +62,7 @@ class BasicBlock(nn.Module):
 
 class DownBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(DownBlock, self).__init__()
+        super().__init__()
         mid_channels = out_channels // 2
         # left
         self.conv1 = nn.Conv2d(
@@ -111,9 +111,9 @@ class DownBlock(nn.Module):
 
 class ShuffleNetV2(nn.Module):
     def __init__(self, net_size):
-        super(ShuffleNetV2, self).__init__()
-        out_channels = configs[net_size]["out_channels"]
-        num_blocks = configs[net_size]["num_blocks"]
+        super().__init__()
+        out_channels = configs[net_size]['out_channels']
+        num_blocks = configs[net_size]['num_blocks']
 
         self.conv1 = nn.Conv2d(3, 24, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(24)
@@ -153,10 +153,10 @@ class ShuffleNetV2(nn.Module):
 
 
 configs = {
-    0.5: {"out_channels": (48, 96, 192, 1024), "num_blocks": (3, 7, 3)},
-    1: {"out_channels": (116, 232, 464, 1024), "num_blocks": (3, 7, 3)},
-    1.5: {"out_channels": (176, 352, 704, 1024), "num_blocks": (3, 7, 3)},
-    2: {"out_channels": (224, 488, 976, 2048), "num_blocks": (3, 7, 3)},
+    0.5: {'out_channels': (48, 96, 192, 1024), 'num_blocks': (3, 7, 3)},
+    1: {'out_channels': (116, 232, 464, 1024), 'num_blocks': (3, 7, 3)},
+    1.5: {'out_channels': (176, 352, 704, 1024), 'num_blocks': (3, 7, 3)},
+    2: {'out_channels': (224, 488, 976, 2048), 'num_blocks': (3, 7, 3)},
 }
 
 

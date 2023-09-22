@@ -7,7 +7,7 @@ from nincore.utils import AvgMeter
 from torch import Tensor, nn
 from torch.nn.utils import prune
 
-__all__ = ["count_params", "count_macs", "count_size", "count_sparse", "count_latency"]
+__all__ = ['count_params', 'count_macs', 'count_size', 'count_sparse', 'count_latency']
 
 
 @torch.no_grad()
@@ -34,7 +34,7 @@ def count_params(
     all_params_dict = {}
 
     for name, param in model.named_parameters():
-        if not count_bias and name.find("bias") > -1:
+        if not count_bias and name.find('bias') > -1:
             continue
 
         if not count_only_requires_grad or param.requires_grad:
@@ -79,17 +79,17 @@ def count_size(
         return_layers=False,
     )
     size = numel * bits
-    unit = "B"
+    unit = 'B'
     if size >= GB:
         size = size / GB
-        unit = "GB"
+        unit = 'GB'
     elif size >= MB:
         size = size / MB
-        unit = "MB"
+        unit = 'MB'
     elif size >= KB:
         size = size / KB
-        unit = "KB"
-    return f"{size:4f} {unit}"
+        unit = 'KB'
+    return f'{size:4f} {unit}'
 
 
 # While can using with `torchprofile.count_mac` directly, but fn is just for a reminder.
@@ -97,12 +97,12 @@ def count_size(
 def count_macs(
     model: nn.Module,
     input_size: Sequence[int],
-    device: torch.device = torch.device("cuda"),
+    device: torch.device = torch.device('cuda'),
 ) -> int:
     try:
         from torchprofile import profile_macs
     except ImportError:
-        raise ImportError("`count_macs` requires `torchprofile`." "Please install via `pip install torchprofile`.")
+        raise ImportError('`count_macs` requires `torchprofile`.' 'Please install via `pip install torchprofile`.')
 
     model = model.to(device)
     input = torch.empty(input_size, device=device)
@@ -132,7 +132,7 @@ def count_sparse(
     sparses = AvgMeter()
 
     for name, param in named_paramaters:
-        if not count_bias and name.find("bias") > -1:
+        if not count_bias and name.find('bias') > -1:
             continue
 
         numel = param.numel()

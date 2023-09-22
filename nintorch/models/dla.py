@@ -70,7 +70,7 @@ class Tree(nn.Module):
             self.root = Root((level + 2) * out_channels, out_channels)
             for i in reversed(range(1, level)):
                 subtree = Tree(block, in_channels, out_channels, level=i, stride=stride)
-                self.__setattr__("level_%d" % i, subtree)
+                self.__setattr__('level_%d' % i, subtree)
             self.prev_root = block(in_channels, out_channels, stride=stride)
             self.left_node = block(out_channels, out_channels, stride=1)
             self.right_node = block(out_channels, out_channels, stride=1)
@@ -78,7 +78,7 @@ class Tree(nn.Module):
     def forward(self, x):
         xs = [self.prev_root(x)] if self.level > 1 else []
         for i in reversed(range(1, self.level)):
-            level_i = self.__getattr__("level_%d" % i)
+            level_i = self.__getattr__('level_%d' % i)
             x = level_i(x)
             xs.append(x)
         x = self.left_node(x)
@@ -138,5 +138,5 @@ def test():
     print(y.size())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     test()

@@ -55,7 +55,7 @@ class LeNet5(nn.Module):
         return output
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     model = LeNet5()
     print(model)
     model = model.eval()

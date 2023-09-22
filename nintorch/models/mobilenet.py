@@ -1,6 +1,6 @@
 """MobileNet in PyTorch.
 
-See the paper "MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications"
+See the paper 'MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications'
 for more details.
 """
 import torch

@@ -29,6 +29,7 @@ repos:
           '120',
           '--target-version',
           'py311',
+          '--skip-string-normalization',
           '--exclude',
           './exps',
         ]

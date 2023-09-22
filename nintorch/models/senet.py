@@ -59,7 +59,7 @@ class PreActBlock(nn.Module):
 
     def forward(self, x):
         out = F.relu(self.bn1(x))
-        shortcut = self.shortcut(out) if hasattr(self, "shortcut") else x
+        shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
         out = self.conv1(out)
         out = self.conv2(F.relu(self.bn2(out)))
 
@@ -111,7 +111,7 @@ def SENet18():
     return SENet(PreActBlock, [2, 2, 2, 2])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     net = SENet18()
     y = net(torch.randn(1, 3, 32, 32))
     print(y.size())

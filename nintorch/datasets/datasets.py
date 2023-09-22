@@ -6,7 +6,7 @@ from torchvision.datasets import ImageFolder
 from torchvision.datasets.folder import default_loader
 from tqdm import tqdm
 
-__all__ = ["PreloadImageFolder", "cv_loader", "pil_loader"]
+__all__ = ['PreloadImageFolder', 'cv_loader', 'pil_loader']
 
 pil_loader = default_loader
 
@@ -40,7 +40,7 @@ class PreloadImageFolder(ImageFolder):
         super().__init__(root, transform, target_transform, loader, is_valid_file)
         imgs = self.samples
         pbar = tqdm(imgs)
-        pbar.set_description("PreloadImageFolder")
+        pbar.set_description('PreloadImageFolder')
 
         img_labels = []
         for img_dir, label in pbar:
@@ -59,7 +59,7 @@ class PreloadImageFolder(ImageFolder):
             self.target_transform = lambda x: x
 
 
-if __name__ == "__main__":
-    imagefolder = PreloadImageFolder("~/datasets/imagenet/val", transform_first=True)
+if __name__ == '__main__':
+    imagefolder = PreloadImageFolder('~/datasets/imagenet/val', transform_first=True)
     img, label = next(iter(imagefolder))
     print(img, label)

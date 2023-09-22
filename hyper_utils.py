@@ -16,24 +16,24 @@ def run_cmd(cmd: str, getline: int = -2) -> Optional[float]:
     """Run command and receive a stdout `getline` line.
 
     Example:
-    >>> run_cmd("python main.py")
+    >>> run_cmd('python main.py')
     """
     assert isinstance(cmd, str)
     assert isinstance(getline, int)
 
-    if cmd.find("python3") > -1:
+    if cmd.find('python3') > -1:
         PYTHON = sys.executable
-        cmd = cmd.replace("python3", PYTHON)
+        cmd = cmd.replace('python3', PYTHON)
 
-    elif cmd.find("python") > -1:
+    elif cmd.find('python') > -1:
         PYTHON = sys.executable
-        cmd = cmd.replace("python", PYTHON)
+        cmd = cmd.replace('python', PYTHON)
 
-    cmd = cmd.split(" ")
+    cmd = cmd.split(' ')
     stdout = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode()
 
     try:
-        result = float(stdout.split("\n")[getline])
+        result = float(stdout.split('\n')[getline])
     except (IndexError, ValueError):
         # Catche the error when the float converting is not possible or
         # stdout information have lower lines than `getline`.
@@ -56,7 +56,7 @@ class Suggestion:
         amax: Optional[Union[float, int]] = None,
         choices: Optional[Sequence[Union[None, bool, int, float, str]]] = None,
     ) -> None:
-        assert typename in ("float", "categorical", "int", "uniform", "log_uniform")
+        assert typename in ('float', 'categorical', 'int', 'uniform', 'log_uniform')
         self.name = name
         self.typename = typename
         self.amin = amin
@@ -64,25 +64,25 @@ class Suggestion:
         self.choices = choices
 
     def suggest(self, trial: optuna.Trial) -> float:
-        if self.typename == "float":
+        if self.typename == 'float':
             suggest = trial.suggest_float(self.name, self.amin, self.amax)
-        elif self.typename == "categorical":
+        elif self.typename == 'categorical':
             suggest = trial.suggest_categorical(self.name, self.choices)
-        elif self.typename == "int":
+        elif self.typename == 'int':
             suggest = trial.suggest_int(self.name, self.amin, self.amax)
-        elif self.typename == "uniform":
+        elif self.typename == 'uniform':
             suggest = trial.suggest_uniform(self.name, self.amin, self.amax)
-        elif self.typename == "log_uniform":
+        elif self.typename == 'log_uniform':
             suggest = trial.suggest_loguniform(self.name, self.amin, self.amax)
         else:
             raise NotImplementedError(
-                'Expect `typename` in ("float", "categorical", "int", "uniform", "log_uniform").'
-                f"Your `typename`: {self.typename}."
+                'Expect `typename` in (`float`, `categorical`, `int`, `uniform`, `log_uniform`).'
+                f'Your `typename`: {self.typename}.'
             )
         return suggest
 
     def gen_cmd(self, suggest: Union[int, float]) -> str:
-        args = f" --{self.name} {suggest}"
+        args = f' --{self.name} {suggest}'
         return args
 
 
@@ -94,19 +94,19 @@ def run_script(trial: Trial, cmd: str, suggestions: List[Suggestion], timeout: O
         timeout (int): seconds to interrupt a given trial.
 
     Example:
-    >>> wrapped_run_script = lambda trial: run_script(trial, "python main.py")
-    >>> study = optuna.create_study(study_name="study", direction="maximize")
+    >>> wrapped_run_script = lambda trial: run_script(trial, 'python main.py')
+    >>> study = optuna.create_study(study_name='study', direction='maximize')
     >>> study.optimize(wrapped_run_script, n_trials=n_trials)
     """
-    assert cmd.find("python") > -1, "Cannot find `python` in `cmd`."
+    assert cmd.find('python') > -1, 'Cannot find `python` in `cmd`.'
     global trial_counter
 
     for suggestion in suggestions:
         suggested = suggestion.suggest(trial)
         args = suggestion.gen_cmd(suggested)
         cmd += args
-    cmd = cmd.replace("_", "-")
-    gprint(f"Running command: `{cmd}`.")
+    cmd = cmd.replace('_', '-')
+    gprint(f'Running command: `{cmd}`.')
 
     score = None
     if timeout is not None:
@@ -114,12 +114,12 @@ def run_script(trial: Trial, cmd: str, suggestions: List[Suggestion], timeout: O
         try:
             score = run_cmd(cmd)
         except TimeoutError:
-            rprint(f"Timeout interrupt! using more than {timeout}, skipping {cmd}.")
+            rprint(f'Timeout interrupt! using more than {timeout}, skipping {cmd}.')
         signal.alarm(0)
 
     else:
         score = run_cmd(cmd)
 
-    gprint(f"Done trial#{trial_counter} with score: {score}")
+    gprint(f'Done trial#{trial_counter} with score: {score}')
     trial_counter += 1
     return score

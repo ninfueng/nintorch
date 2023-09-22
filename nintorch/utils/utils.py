@@ -10,7 +10,7 @@ from torch.utils.data.dataloader import DataLoader
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["AvgMeter", "time_loader"]
+__all__ = ['AvgMeter', 'time_loader']
 
 
 class AvgMeter:
@@ -51,14 +51,14 @@ class AvgMeter:
         self.avg = self.sum / self.count
 
     def __str__(self) -> str:
-        return f"Sum: {self.sum}, Count: {self.count}, Avg: {self.avg}"
+        return f'Sum: {self.sum}, Count: {self.count}, Avg: {self.avg}'
 
 
 def time_loader(
     data_loader: DataLoader,
     num_workers_to_test: Tuple[int, ...] = tuple(range(1, os.cpu_count())),
     num_test_epochs: int = 10,
-    device: torch.device = torch.device("cpu"),
+    device: torch.device = torch.device('cpu'),
     verbose: bool = True,
 ) -> int:
     """Given a `data_loader`, return an optimized number of workers with minimize load-times."""
@@ -75,7 +75,7 @@ def time_loader(
         t1 = time.perf_counter()
         timing = t1 - t0
         if verbose:
-            logger.info(f"Number of workers: {num_worker}, using time: {timing}.")
+            logger.info(f'Number of workers: {num_worker}, using time: {timing}.')
         timings.append(timing)
 
     best_timing_idx = np.argmin(timings)

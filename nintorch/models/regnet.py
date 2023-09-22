@@ -1,6 +1,6 @@
 """RegNet in PyTorch.
 
-Paper: "Designing Network Design Spaces".
+Paper: 'Designing Network Design Spaces'.
 
 Reference: https://github.com/keras-team/keras-applications/blob/master/keras_applications/efficientnet.py
 """
@@ -82,15 +82,15 @@ class RegNet(nn.Module):
         self.layer2 = self._make_layer(1)
         self.layer3 = self._make_layer(2)
         self.layer4 = self._make_layer(3)
-        self.linear = nn.Linear(self.cfg["widths"][-1], num_classes)
+        self.linear = nn.Linear(self.cfg['widths'][-1], num_classes)
 
     def _make_layer(self, idx):
-        depth = self.cfg["depths"][idx]
-        width = self.cfg["widths"][idx]
-        stride = self.cfg["strides"][idx]
-        group_width = self.cfg["group_width"]
-        bottleneck_ratio = self.cfg["bottleneck_ratio"]
-        se_ratio = self.cfg["se_ratio"]
+        depth = self.cfg['depths'][idx]
+        width = self.cfg['widths'][idx]
+        stride = self.cfg['strides'][idx]
+        group_width = self.cfg['group_width']
+        bottleneck_ratio = self.cfg['bottleneck_ratio']
+        se_ratio = self.cfg['se_ratio']
 
         layers = []
         for i in range(depth):
@@ -113,36 +113,36 @@ class RegNet(nn.Module):
 
 def RegNetX_200MF():
     cfg = {
-        "depths": [1, 1, 4, 7],
-        "widths": [24, 56, 152, 368],
-        "strides": [1, 1, 2, 2],
-        "group_width": 8,
-        "bottleneck_ratio": 1,
-        "se_ratio": 0,
+        'depths': [1, 1, 4, 7],
+        'widths': [24, 56, 152, 368],
+        'strides': [1, 1, 2, 2],
+        'group_width': 8,
+        'bottleneck_ratio': 1,
+        'se_ratio': 0,
     }
     return RegNet(cfg)
 
 
 def RegNetX_400MF():
     cfg = {
-        "depths": [1, 2, 7, 12],
-        "widths": [32, 64, 160, 384],
-        "strides": [1, 1, 2, 2],
-        "group_width": 16,
-        "bottleneck_ratio": 1,
-        "se_ratio": 0,
+        'depths': [1, 2, 7, 12],
+        'widths': [32, 64, 160, 384],
+        'strides': [1, 1, 2, 2],
+        'group_width': 16,
+        'bottleneck_ratio': 1,
+        'se_ratio': 0,
     }
     return RegNet(cfg)
 
 
 def RegNetY_400MF():
     cfg = {
-        "depths": [1, 2, 7, 12],
-        "widths": [32, 64, 160, 384],
-        "strides": [1, 1, 2, 2],
-        "group_width": 16,
-        "bottleneck_ratio": 1,
-        "se_ratio": 0.25,
+        'depths': [1, 2, 7, 12],
+        'widths': [32, 64, 160, 384],
+        'strides': [1, 1, 2, 2],
+        'group_width': 16,
+        'bottleneck_ratio': 1,
+        'se_ratio': 0.25,
     }
     return RegNet(cfg)
 
@@ -155,5 +155,5 @@ def test():
     print(y.shape)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     test()

@@ -8,12 +8,12 @@ import torch
 logger = logging.getLogger(__file__)
 deterministic_flag = False
 
-__all__ = ["seed_torch", "disable_debug", "enable_tf32", "set_benchmark"]
+__all__ = ['seed_torch', 'disable_debug', 'enable_tf32', 'set_benchmark']
 
 
 def seed_torch(seed: int, verbose: bool = False) -> None:
     """Set random seed by utilizing this function will set `DETERMINISTIC_FLAG` to True."""
-    os.environ["PYTHONHASHSEED"] = str(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
 
@@ -24,7 +24,7 @@ def seed_torch(seed: int, verbose: bool = False) -> None:
     global deterministic_flag
     deterministic_flag = True
     if verbose:
-        logger.info(f"Set a random seed: {seed} and set a `deterministic_flag`.")
+        logger.info(f'Set a random seed: {seed} and set a `deterministic_flag`.')
 
 
 # https://github.com/Lightning-AI/lightning/issues/3484
@@ -34,7 +34,7 @@ def disable_debug(verbose: bool = False) -> None:
     torch.autograd.profiler.emit_nvtx(enabled=False)
     torch.autograd.set_detect_anomaly(mode=False)
     if verbose:
-        logger.info("Disable all `torch` debugging APIs for a faster runtime.")
+        logger.info('Disable all `torch` debugging APIs for a faster runtime.')
 
 
 def enable_tf32(verbose: bool = False) -> None:
@@ -46,7 +46,7 @@ def enable_tf32(verbose: bool = False) -> None:
 
         if verbose:
             logger.info(
-                "Detect an `Ampere` or a newer GPU architecture with `torch` > 1.7.0. " "Enable NVIDIA `TF32` datatype."
+                'Detect an `Ampere` or a newer GPU architecture with `torch` > 1.7.0. ' 'Enable NVIDIA `TF32` datatype.'
             )
 
 
@@ -55,8 +55,8 @@ def set_benchmark(verbose: bool = False) -> None:
     if not deterministic_flag:
         torch.backends.cudnn.benchmark = True
         if verbose:
-            logger.info("Set `torch.backends.cudnn.benchmark` to True.")
+            logger.info('Set `torch.backends.cudnn.benchmark` to True.')
     else:
         torch.backends.cudnn.benchmark = False
         if verbose:
-            logger.info("Detect `DETERMINISTIC_FLAG`, " "set `torch.backends.cudnn.benchmark` to False.")
+            logger.info('Detect `DETERMINISTIC_FLAG`, ' 'set `torch.backends.cudnn.benchmark` to False.')
