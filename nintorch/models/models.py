@@ -1,4 +1,4 @@
-# All these models from `https://github.com/kuangliu/pytorch-cifar`.
+# https://github.com/kuangliu/pytorch-cifar
 from typing import Any, Optional
 
 from .densenet import *
@@ -7,8 +7,6 @@ from .dla_simple import *
 from .dpn import *
 from .efficientnet import *
 from .googlenet import *
-
-# Others
 from .lenet import *
 from .mobilenet import *
 from .mobilenetv2 import *
@@ -17,7 +15,7 @@ from .preact_resnet import *
 from .regnet import *
 from .resnet import *
 
-# This models from `https://github.com/akamaster/pytorch_resnet_cifar10`.
+# https://github.com/akamaster/pytorch_resnet_cifar10
 from .resnet_cifar import *
 from .resnext import *
 from .senet import *
@@ -65,7 +63,7 @@ def construct_model_cifar(model_name: str, num_classes: Optional[int] = None, *a
         model_name: model name to construct.
         num_classes: number of classes to replace last linear layers with.
     """
-    model_name = model_name.lower(*args, **kwargs)
+    model_name = model_name.lower()
     if model_name == 'lenet5':
         model = LeNet5(*args, **kwargs)
 
@@ -134,7 +132,7 @@ def construct_model_cifar(model_name: str, num_classes: Optional[int] = None, *a
     elif model_name == 'shufflenetg3':
         model = ShuffleNetG3(*args, **kwargs)
     elif model_name == 'shufflenetv2':
-        model = ShuffleNetV2(net_size=0.5)
+        model = ShuffleNetV2(*args, **kwargs)
 
     elif model_name == 'senet18':
         model = SENet18(*args, **kwargs)
@@ -143,7 +141,6 @@ def construct_model_cifar(model_name: str, num_classes: Optional[int] = None, *a
 
     if num_classes is not None:
         try:
-            # VGG case
             model.classifier = nn.Linear(model.classifier.in_features, num_classes)
         except AttributeError:
             model.linear = nn.Linear(model.linear.in_features, num_classes)

@@ -33,14 +33,12 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torchvision.models
-import torchvision.transforms as transforms
 import wandb
 from nincore import AttrDict
 from nincore.io import load_yaml
 from nincore.time import second_to_ddhhmmss
 from nincore.utils import backup_scripts, filter_warn, set_logger
 from timm.data import Mixup
-from timm.data.transforms_factory import create_transform
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.optim.optim_factory import create_optimizer_v2
 from torch.cuda.amp import GradScaler
@@ -48,51 +46,47 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import BatchSampler, DataLoader, Subset
 from torch.utils.data.distributed import DistributedSampler
-from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
 
-from nintorch.datasets.cinic10 import CINIC10
 from nintorch.models import construct_model_cifar
 from nintorch.scheduler import WarmupLR
+from nintorch.utils import convert_layer
 from nintorch.utils.perform import disable_debug, enable_tf32, seed_torch, set_benchmark
-from utils import test_an_epoch, train_an_epoch
+from reparam import ReparamConv2d, ReparamLinear
+from utils import get_data_conf, get_datasets, get_transforms, test_epoch, train_epoch
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Classification template for CIFAR10, CIFAR100, CINIC10, and ImageNet.'
-    )
-    group = parser.add_argument_group('Project related settings.')
+    parser = argparse.ArgumentParser(description='classification scripts')
+    group = parser.add_argument_group('project')
     group.add_argument('--project-name', type=str, default='nintorch')
     group.add_argument('--run-name', type=str, default='nintorch')
     group.add_argument('--model-log-freq', type=int, default=None)
-    group.add_argument('--log-interval', type=int, default=100)
+    group.add_argument('--log-interval', type=int, default=float('inf'))
     group.add_argument('--eval-every-epoch', type=int, default=1)
     group.add_argument('--dist', action='store_true')
     group.add_argument('--yaml-dir', type=str, default=None)
 
-    group = parser.add_argument_group('Training related settings.')
+    group = parser.add_argument_group('training')
     group.add_argument('--model-name', type=str, default='resnet20')
-    group.add_argument('--lr', type=float, default=5e-1)
+    group.add_argument('--lr', type=float, default=1e-2)
     group.add_argument('--opt', type=str, default='sgd')
-    group.add_argument('--batch-size', type=int, default=512)
+    group.add_argument('--batch-size', type=int, default=128)
     group.add_argument('--seed', type=int, default=None)
-    group.add_argument('--workers', type=int, default=os.cpu_count())
+    group.add_argument('--workers', type=int, default=min(os.cpu_count(), 8))
     group.add_argument('--weight-decay', type=float, default=1e-4)
     group.add_argument('--warmup-epoch', type=int, default=5)
     group.add_argument('--epoch', type=int, default=200)
     group.add_argument('--clip-grad', type=float, default=0.0)
     group.add_argument('--dataset', type=str, default='cifar10')
-    group.add_argument('--download-dir', type=str, default='./downloads')
     group.add_argument('--subset-idx-load-dir', type=str, default=None)
     group.add_argument('--grad-accum', type=int, default=None)
-    group.add_argument('--fp16', action='store_true')
-    group.add_argument('--wandb', action='store_true')
-    group.add_argument('--mixup', action='store_true')
-    group.add_argument('--auto-augment', action='store_true')
-    group.add_argument('--rand-erasing', action='store_true')
+    group.add_argument('--exp-dir', type=str, default=None)
     group.add_argument('--label-smoothing', action='store_true')
+    group.add_argument('--half', action='store_true')
+    group.add_argument('--wandb', action='store_true')
     group.add_argument('--compile', action='store_true')
 
-    group = parser.add_argument_group('Mixup related settings.')
+    group = parser.add_argument_group('mixup')
+    group.add_argument('--mixup', action='store_true')
     group.add_argument('--mixup-mixup-alpha', type=float, default=0.8)
     group.add_argument('--mixup-cutmix-alpha', type=float, default=1.0)
     group.add_argument('--mixup-cutmix-minmax', type=float, default=None)
@@ -101,31 +95,31 @@ if __name__ == '__main__':
     group.add_argument('--mixup-mode', type=str, default='batch')
     group.add_argument('--mixup-label-smoothing', type=float, default=0.1)
 
-    group = parser.add_argument_group('Augmentation related settings.')
+    group = parser.add_argument_group('augment')
+    group.add_argument('--auto-augment', action='store_true')
+    group.add_argument('--rand-erasing', action='store_true')
     group.add_argument('--color-jitter', type=float, default=0.4)
     group.add_argument('--auto-augment-type', type=str, default='rand-m9-mstd0.5-inc1')
-    group.add_argument('--interpolation', type=str, default='bicubic')
-    # Random-erasing related arguments.
+    group.add_argument('--interpolation', type=str, default='bilinear')
+
+    group = parser.add_argument_group('erasing')
     group.add_argument('--re-prob', type=float, default=0.25)
     group.add_argument('--re-mode', type=str, default='pixel')
     group.add_argument('--re-count', type=float, default=1)
 
-    group = parser.add_argument_group('ImageNet related settings.')
+    group = parser.add_argument_group('imagenet')
     group.add_argument('--dataset-dir', type=str, default='~/datasets/imagenet')
     args = parser.parse_args()
-
-    # `rank` is not defined that is still fine.
-    log_rank_zero = lambda info: logging.info(info) if rank == 0 else None
-    start = time.perf_counter()
-    filter_warn()
     args = AttrDict(vars(args))
 
-    # If using `yaml-dir`, all other `args` will be discards and prioritize `args` from `yaml`.
-    yaml = False
+    log_rank_zero = lambda info: logging.info(info) if rank == 0 else None
+    filter_warn()
+
+    start = time.perf_counter()
     if args.yaml_dir is not None:
         args = load_yaml(args.yaml_dir)
         args = AttrDict(args)
-        yaml = True
+        logging.info('Detect `args.yaml` is not None, use arguments in yaml file.')
 
     if args.dist:
         master_addr = os.environ['MASTER_ADDR']
@@ -161,89 +155,34 @@ if __name__ == '__main__':
             wandb.init(project=args.project_name, config=vars(args), allow_val_change=True)
             wandb.run.name = args.run_name
 
-        exp_path = os.path.join(
-            'exps',
-            str(datetime.datetime.now()).replace(':', '-').replace('.', '-').replace(' ', '-'),
-        )
-        os.makedirs(exp_path, exist_ok=True)
-        set_logger(os.path.join(exp_path, 'info.log'), stdout=True)
+        exp_dir = args.exp_dir
+        if exp_dir is None:
+            exp_dir = os.path.join(
+                'exps',
+                str(datetime.datetime.now()).replace(':', '-').replace('.', '-').replace(' ', '-'),
+            )
+        os.makedirs(exp_dir, exist_ok=True)
+        set_logger(os.path.join(exp_dir, 'info.log'), stdout=True)
         log_rank_zero(pformat(args))
 
-        if yaml:
-            logging.info('Detect `args.yaml_dir` is not None, ' f'use all arguments based on {args.yaml_dir}.')
-
-        backup_scripts(['*.py', '*.sh', '*.md'], os.path.join(exp_path, 'scripts'))
+        backup_scripts(['*.py'], os.path.join(exp_dir, 'scripts'))
         cmd = 'python ' + reduce(lambda x, y: f'{x} {y}', sys.argv)
 
         if args.seed is not None:
             seed_torch(args.seed)
 
         # https://discuss.ray.io/t/amp-mixed-precision-training-is-slower-than-default-precision/9842/7
-        enable_tf32() if not args.fp16 else None
-        disable_debug()
-        set_benchmark()
+        enable_tf32(verbose=True) if not args.half else None
+        disable_debug(verbose=True)
+        set_benchmark(verbose=True)
 
         log_rank_zero(f'Run with the command line: `{cmd}`.')
     else:
-        exp_path = None
+        exp_dir = None
 
-    # TODO: simplify this datasets to `load_tiny_datasets`.
-    if args.dataset == 'cifar10':
-        mean = (0.4914, 0.4822, 0.4465)
-        std = (0.2023, 0.1994, 0.2010)
-        num_classes = 10
-        img_size = 32
-
-    elif args.dataset == 'cifar100':
-        mean = (0.5071, 0.4867, 0.4408)
-        std = (0.2675, 0.2565, 0.2761)
-        num_classes = 100
-        img_size = 32
-
-    elif args.dataset == 'cinic10':
-        mean = (0.47889522, 0.47227842, 0.43047404)
-        std = (0.24205776, 0.23828046, 0.25874835)
-        num_classes = 10
-        img_size = 32
-
-    elif args.dataset == 'imagenet':
-        mean = (0.485, 0.456, 0.406)
-        std = (0.229, 0.224, 0.225)
-        num_classes = 1_000
-        img_size = 224
-
-    else:
-        raise NotImplementedError(
-            'Support only `cifar10`, `cifar100`, `cinic10`, and `imagenet`, ' f'but your input: {args.dataset}'
-        )
-
-    normalize = transforms.Normalize(mean, std)
-    train_transforms = create_transform(
-        input_size=img_size,
-        is_training=True,
-        color_jitter=args.color_jitter if args.color_jitter else None,
-        auto_augment=args.auto_augment_type if args.auto_augment else None,
-        re_prob=args.re_prob if args.random_erasing else 0.0,
-        re_mode=args.re_mode,
-        re_count=args.recount,
-        interpolation=args.interpolation,
-    )
-
-    if img_size == 32:
-        # For `cifar10` size of data, using with `RandomCrop` instead of `RandomResizedCrop`.
-        train_transforms.transforms[0] = transforms.RandomCrop(img_size, padding=4)
-        test_transforms = transforms.Compose([transforms.ToTensor(), normalize])
-    elif img_size == 224:
-        test_transforms = transforms.Compose(
-            [
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                normalize,
-            ]
-        )
-    else:
-        raise NotImplementedError(f'Detected `img_size` not in [32, 224], your `img_size`: {img_size}')
+    data_conf = get_data_conf(args.dataset)
+    train_transforms, test_transforms = get_transforms(args, data_conf)
+    train_dataset, test_dataset = get_datasets(data_conf, train_transforms, test_transforms)
     log_rank_zero(train_transforms)
     log_rank_zero(test_transforms)
 
@@ -256,53 +195,12 @@ if __name__ == '__main__':
             switch_prob=args.mixup_switch_prob,
             mode=args.mixup_mode,
             label_smoothing=args.mixup_label_smoothing if args.label_smoothing else 0.0,
-            num_classes=num_classes,
+            num_classes=data_conf.num_classes,
         )
         log_rank_zero('Using `mixup` data augmentation.')
     else:
         mixup_fn = None
         log_rank_zero('Not using `mixup` data augmentation.')
-
-    if args.dataset == 'cifar10':
-        train_dataset = CIFAR10(
-            root=args.download_dir,
-            train=True,
-            download=True,
-            transform=train_transforms,
-        )
-        test_dataset = CIFAR10(
-            root=args.download_dir,
-            train=False,
-            download=True,
-            transform=test_transforms,
-        )
-    elif args.dataset == 'cifar100':
-        train_dataset = CIFAR100(
-            root=args.download_dir,
-            train=True,
-            download=True,
-            transform=train_transforms,
-        )
-        test_dataset = CIFAR100(
-            root=args.download_dir,
-            train=False,
-            download=True,
-            transform=test_transforms,
-        )
-    elif args.dataset == 'cinic10':
-        download_dir = os.path.join(args.download_dir, 'cinic10')
-        train_dataset = CINIC10(root=download_dir, mode='train', transforms=train_transforms)
-        test_dataset = CINIC10(root=download_dir, mode='test', transforms=test_transforms)
-    elif args.dataset == 'imagenet':
-        dataset_dir = os.path.expanduser(args.dataset_dir)
-        log_rank_zero(f'Loading imagenet dataset from: `{dataset_dir}`')
-
-        train_dataset = ImageFolder(os.path.join(dataset_dir, 'train'), train_transforms)
-        test_dataset = ImageFolder(os.path.join(dataset_dir, 'val'), test_transforms)
-    else:
-        raise NotImplementedError(
-            '`dataset` only supports `cifar10`, `cifar100`, `cinic10`, and `imagenet` ' f'Your: `{args.dataset}`'
-        )
 
     if args.subset_idx_load_dir is not None:
         log_rank_zero(f'Detect `args.subset_idx_load_dir is not None`.' 'Use subset of training dataset.')
@@ -319,7 +217,7 @@ if __name__ == '__main__':
 
     train_loader = DataLoader(
         train_dataset,
-        # batch_size = 1 is a default value which will be overwritten by sampler.
+        # `batch_size = 1` is a default value, which will be overwritten by sampler.
         batch_size=batch_size if not args.dist else 1,
         shuffle=True if not args.dist else None,
         batch_sampler=train_batch_sampler if args.dist else None,
@@ -338,11 +236,15 @@ if __name__ == '__main__':
     )
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if img_size == 32:
-        model = construct_model_cifar(args.model_name, num_classes=num_classes)
+    if (
+        data_conf.dataset_name == 'cifar10'
+        or data_conf.dataset_name == 'cifar100'
+        or data_conf.dataset_name == 'cinic10'
+    ):
+        model = construct_model_cifar(args.model_name, num_classes=data_conf.num_classes)
         log_rank_zero(f'Construct a `{args.model_name}` model for CIFAR-like dataset.')
     else:
-        model = getattr(torchvision.models, args.model_name)(pretrained=False, num_classes=num_classes)
+        model = getattr(torchvision.models, args.model_name)(pretrained=False, num_classes=data_conf.num_classes)
         log_rank_zero(f'Construct a `{args.model_name}` model from `torchvision.models`')
 
     model = model.to(device)
@@ -367,6 +269,7 @@ if __name__ == '__main__':
             f'Did not detect `mixup`, `label_smoothing`, or `mixup_label_smoothing` == 0.0, '
             'using `CrossEntropyLoss`.'
         )
+    test_criterion = nn.CrossEntropyLoss()
 
     optimizer = create_optimizer_v2(
         model,
@@ -392,9 +295,9 @@ if __name__ == '__main__':
         warmup_scheduler = None
 
     scaler = opt_level = None
-    if args.fp16:
+    if args.half:
         scaler = GradScaler()
-        log_rank_zero('Using `torch.cuda.amp` FP16.')
+        log_rank_zero('Using `torch.cuda.amp` half.')
 
         if args.dist:
             model = nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda(gpu_idx)
@@ -411,6 +314,7 @@ if __name__ == '__main__':
         test_loader=test_loader,
         model=model,
         criterion=criterion,
+        test_criterion=test_criterion,
         optimizer=optimizer,
         scheduler=scheduler,
         warmup_scheduler=warmup_scheduler,
@@ -422,28 +326,28 @@ if __name__ == '__main__':
         log_interval=args.log_interval,
         rank=rank,
         dist=args.dist,
-        exp_path=exp_path,
+        exp_dir=exp_dir,
     )
-    conf.update(args)
+    args.update(conf)
+    conf = args
+
     if conf.rank == 0 and conf.wandb and conf.model_log_freq is not None:
         wandb.watch(model, log_freq=conf.model_log_freq)
         log_rank_zero('Using `wandb` to tracking the model distribution.')
 
-    start_epoch = 0
     for epoch_idx in range(1, args.epoch + 1):
         conf.epoch_idx = epoch_idx
-        train_an_epoch(conf)
+        train_epoch(conf)
         if epoch_idx % conf.eval_every_epoch == 0:
-            test_an_epoch(conf)
+            test_epoch(conf)
+
     end = time.perf_counter()
-    del train_loader
-    del test_loader
 
     if conf.rank == 0:
         runtime = second_to_ddhhmmss(end - start)
-        logging.info(f'Total run-time: {runtime}.')
+        logging.info(f'Total run-time: {runtime} seconds.')
         conf.runtime = runtime
-        conf.to_json(os.path.join(exp_path, 'settings.json'))
+        conf.to_json(os.path.join(conf.exp_dir, 'settings.json'))
 
         if args.wandb:
             wandb.run.summary['best_acc'] = conf.best_acc
@@ -453,3 +357,6 @@ if __name__ == '__main__':
 
     if args.dist:
         dist.destroy_process_group()
+
+    del train_loader
+    del test_loader

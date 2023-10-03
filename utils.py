@@ -1,24 +1,155 @@
 import logging
 import os
+from typing import Optional, Tuple
 
 import torch
+import torchvision.transforms as T
 import wandb
 from nincore import AttrDict
+from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
+from timm.data.transforms_factory import create_transform
 from timm.utils import accuracy
 from torch.cuda.amp import autocast
+from torch.utils.data import Dataset
+from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
 
+from nintorch.datasets import CINIC10
 from nintorch.utils import AvgMeter
 
 logger = logging.getLogger(__name__)
 
 
-try:
-    inference_mode = torch.inference_mode
-except AttributeError:
-    inference_mode = torch.no_grad
+def get_data_conf(dataset_name: str) -> AttrDict:
+    dataset_name = dataset_name.lower()
+    if dataset_name == 'cifar10':
+        data_conf = AttrDict(
+            mean=(0.4914, 0.4822, 0.4465),
+            std=(0.2023, 0.1994, 0.2010),
+            input_size=(3, 32, 32),
+            num_classes=10,
+            dataset_name=dataset_name,
+        )
+    elif dataset_name == 'cifar100':
+        data_conf = AttrDict(
+            mean=(0.5071, 0.4867, 0.4408),
+            std=(0.2675, 0.2565, 0.2761),
+            input_size=(3, 32, 32),
+            num_classes=100,
+            dataset_name=dataset_name,
+        )
+    elif dataset_name == 'cinic10':
+        data_conf = AttrDict(
+            mean=(0.47889522, 0.47227842, 0.43047404),
+            std=(0.24205776, 0.23828046, 0.25874835),
+            input_size=(3, 32, 32),
+            num_classes=10,
+            dataset_name=dataset_name,
+        )
+    elif dataset_name == 'imagenet':
+        data_conf = AttrDict(
+            mean=IMAGENET_DEFAULT_MEAN,
+            std=IMAGENET_DEFAULT_STD,
+            input_size=(3, 224, 224),
+            num_classes=1_000,
+            dataset_name=dataset_name,
+        )
+    else:
+        raise NotImplementedError(
+            f'Support only `cifar10`, `cifar100`, `cinic10`, and `imagenet`, Your: `{dataset_name}`'
+        )
+    return data_conf
 
 
-def train_an_epoch(conf: AttrDict) -> None:
+def get_transforms(conf: AttrDict, data_conf: AttrDict) -> Tuple[T.Compose, T.Compose]:
+    normalize = T.Normalize(data_conf.mean, data_conf.std)
+    train_transforms = create_transform(
+        input_size=data_conf.input_size[1],
+        is_training=True,
+        color_jitter=conf.color_jitter if conf.color_jitter else None,
+        auto_augment=conf.auto_augment_type if conf.auto_augment else None,
+        re_prob=conf.re_prob if conf.random_erasing else 0.0,
+        re_mode=conf.re_mode,
+        re_count=conf.recount,
+        interpolation=conf.interpolation,
+    )
+
+    if (
+        data_conf.dataset_name == 'cifar10'
+        or data_conf.dataset_name == 'cifar100'
+        or data_conf.dataset_name == 'cinic10'
+    ):
+        # For `cifar10` size of data, using with `RandomCrop` instead of `RandomResizedCrop`.
+        train_transforms.transforms[0] = T.RandomCrop(32, padding=4)
+        test_transforms = T.Compose([T.ToTensor(), normalize])
+    elif data_conf.dataset_name == 'imagenet':
+        test_transforms = T.Compose(
+            [
+                T.Resize(256),
+                T.CenterCrop(224),
+                T.ToTensor(),
+                normalize,
+            ]
+        )
+    else:
+        raise NotImplementedError(
+            f'Support only `cifar10`, `cifar100`, `cinic10`, and `imagenet`, Your: `{data_conf.data_name}`'
+        )
+    return (train_transforms, test_transforms)
+
+
+def get_datasets(
+    data_conf: AttrDict,
+    train_transforms: T.Compose,
+    test_transforms: T.Compose,
+    dataset_dir: Optional[str] = None,
+) -> Tuple[Dataset, Dataset]:
+    if data_conf.dataset_name == 'cifar10':
+        train_dataset = CIFAR10(
+            root='./datasets',
+            train=True,
+            download=True,
+            transform=train_transforms,
+        )
+        test_dataset = CIFAR10(
+            root='./datasets',
+            train=False,
+            download=True,
+            transform=test_transforms,
+        )
+
+    elif data_conf.dataset_name == 'cifar100':
+        train_dataset = CIFAR100(
+            root='./datasets',
+            train=True,
+            download=True,
+            transform=train_transforms,
+        )
+        test_dataset = CIFAR100(
+            root='./datasets',
+            train=False,
+            download=True,
+            transform=test_transforms,
+        )
+
+    elif data_conf.dataset_name == 'cinic10':
+        dataset_dir = os.path.join('./datasets', 'cinic10')
+        train_dataset = CINIC10(root=dataset_dir, split='train', transforms=train_transforms)
+        test_dataset = CINIC10(root=dataset_dir, split='test', transforms=test_transforms)
+
+    elif data_conf.dataset_name == 'imagenet':
+        assert dataset_dir is not None, '`dataset_dir` should not be None, Please input in it.`'
+        dataset_dir = os.path.expanduser(dataset_dir)
+        train_dataset = ImageFolder(os.path.join(dataset_dir, 'train'), train_transforms)
+        test_dataset = ImageFolder(os.path.join(dataset_dir, 'val'), test_transforms)
+
+    else:
+        raise NotImplementedError(
+            f'`dataset` only supports `cifar10`, `cifar100`, `cinic10`, and `imagenet`, Your: `{data_conf.dataset}`'
+        )
+    return train_dataset, test_dataset
+
+
+def train_epoch(conf: AttrDict) -> None:
     conf.model.train()
     train_len = len(conf.train_loader)
     top1, top5, losses = AvgMeter(), AvgMeter(), AvgMeter()
@@ -29,7 +160,7 @@ def train_an_epoch(conf: AttrDict) -> None:
         # https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html
         conf.optimizer.zero_grad(set_to_none=True)
 
-        with autocast(enabled=conf.fp16, dtype=torch.bfloat16):
+        with autocast(enabled=conf.half, dtype=torch.bfloat16):
             if conf.mixup and conf.mixup_fn is not None:
                 # If using `timm`, it expects to pass `timm.data.mixup.Mixup` as `conf.mixup_fn`.
                 mixup_inputs, mixup_targets = conf.mixup_fn(inputs, targets)
@@ -44,7 +175,7 @@ def train_an_epoch(conf: AttrDict) -> None:
             if conf.grad_accum is not None:
                 loss /= conf.grad_accum
 
-        if conf.fp16:
+        if conf.half:
             loss = conf.scaler.scale(loss)
             loss.backward()
 
@@ -65,7 +196,7 @@ def train_an_epoch(conf: AttrDict) -> None:
             if conf.grad_accum is None or (batch_idx + 1) % conf.grad_accum == 0:
                 conf.optimizer.step()
 
-        with inference_mode():
+        with torch.inference_mode():
             acc1, acc5 = accuracy(outputs, targets, (1, 5))
             batch_size = targets.size(0)
             top1.update(acc1.item(), batch_size)
@@ -81,12 +212,10 @@ def train_an_epoch(conf: AttrDict) -> None:
         if (batch_idx + 1) % conf.log_interval == 0 or batch_idx == train_len - 1 and conf.rank == 0:
             first_param = conf.optimizer.param_groups[0]
             cur_lr = first_param['lr']
-            cur_weight_decay = first_param['weight_decay']
             msg = (
                 f'Train Epoch {conf.epoch_idx} ({batch_idx + 1}/{train_len}) | '
                 f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
                 f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
-                f'Decay: {cur_weight_decay:.3e} | '
                 f'Lr: {cur_lr:.3e} |'
             )
             logging.info(msg)
@@ -105,10 +234,9 @@ def train_an_epoch(conf: AttrDict) -> None:
         conf.scheduler.step()
 
 
-@inference_mode()
-def test_an_epoch(conf: AttrDict) -> None:
+@torch.inference_mode()
+def test_epoch(conf: AttrDict) -> None:
     conf.model.eval()
-    criterion = torch.nn.CrossEntropyLoss()
     test_len = len(conf.test_loader)
     top1, top5, losses = AvgMeter(), AvgMeter(), AvgMeter()
 
@@ -116,7 +244,7 @@ def test_an_epoch(conf: AttrDict) -> None:
         inputs = inputs.to(conf.device, non_blocking=True)
         targets = targets.to(conf.device, non_blocking=True)
         outputs = conf.model(inputs)
-        loss = criterion(outputs, targets)
+        loss = conf.test_criterion(outputs, targets)
 
         acc1, acc5 = accuracy(outputs, targets, (1, 5))
         batch_size = targets.size(0)
@@ -153,7 +281,7 @@ def test_an_epoch(conf: AttrDict) -> None:
 
                     best_acc = top1.avg
                     # Cannot use with `AttrDict`. Must use with `dict` to save.
-                    state = dict(
+                    state = AttrDict(
                         model_state_dict=model_state_dict,
                         optimizer_state_dict=conf.optimizer.state_dict(),
                         scheduler_state_dict=conf.scheduler.state_dict(),
@@ -162,13 +290,14 @@ def test_an_epoch(conf: AttrDict) -> None:
                         seed=conf.seed,
                         rng_state=torch.get_rng_state(),
                     )
-
-                    if conf.fp16:
+                    if conf.half:
                         state.update(scaler_state_dict=conf.scaler.state_dict())
 
-                    save_dir = os.path.join(conf.exp_path, 'checkpoint')
+                    save_dir = os.path.join(conf.exp_dir, 'checkpoint')
                     os.makedirs(save_dir, exist_ok=True)
-                    save_model_dir = os.path.join(save_dir, 'best.pth')
+
+                    save_model_dir = os.path.join(save_dir, 'best.pt')
                     torch.save(state, save_model_dir)
+
                     logger.info(f'Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}')
                     conf.best_acc = best_acc

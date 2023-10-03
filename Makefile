@@ -1,6 +1,6 @@
 .PHONY: traincifar10
 traincifar10:
-	python train.py --fp16
+	python train.py --half
 
 .PHONY: clean
 clean:
@@ -19,7 +19,7 @@ cleanall: clean
 	rm -f *.csv
 	rm -f *.pkl
 	rm -rf exps/
-	rm -rf downloads/
+	rm -rf datasets/
 	rm -rf typings/
 	rm -f subset_idx.pt
 

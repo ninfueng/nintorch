@@ -1,0 +1,44 @@
+BootStrap: docker
+From: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
+
+%environment
+   export LC_ALL=C
+
+%post
+    apt update -y
+    apt upgrade -y
+    apt install --no-install-recommends -y \
+        wget \
+        curl \
+        build-essential \
+        ninja-build \
+        tar \
+        zip \
+        git \
+        vim
+
+    conda update -n base -c defaults conda
+    pip3 install --no-cache --upgrade pip
+    pip3 install --no-cache \
+        albumentations \
+        seaborn \
+        timm \
+        wandb \
+        pybind11 \
+        datasets \
+        transformers \
+        pytest \
+        pre-commit \
+        torchprofile
+
+%labels
+    Author ninfueng
+    Version v0.0.1
+
+%help
+    PyTorch singularity
+
+    Install: https://docs.sylabs.io/guides/4.0/user-guide/quick_start.html
+    Build: `sudo singularity build torch.sif torch.def`
+    Run:   `singularity exec --nv torch.sif python main.py`
+    Shell: `singularity shell --nv torch.sif`

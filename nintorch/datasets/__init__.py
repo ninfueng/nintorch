@@ -1,2 +1,3 @@
 from .datasets import *
-from . import cinic10, washington_rgbd
+from .cinic10 import *
+from .washington_rgbd import *

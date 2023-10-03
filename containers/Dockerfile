@@ -1,4 +1,4 @@
-# Run an interactive session: sudo docker run -it --rm --gpus all nintorch
+# Run an interactive session: `sudo docker run -it --rm --gpus all nintorch`
 ARG PYTORCH="2.0.1"
 ARG CUDA="11.7"
 ARG CUDNN="8"
@@ -16,13 +16,7 @@ RUN pip3 install --no-cache \
     transformers \
     pytest \
     pre-commit \
-    torchprofile \
-    webdataset \
-    ttach \
-    cleanlab \
-    cleanvision \
-    catalyst \
-    pytorch_optimizer
+    torchprofile
 
 RUN \
     apt update -y && \
@@ -33,7 +27,10 @@ RUN \
         build-essential \
         ninja-build \
         tar \
-        zip
+        zip \
+        git \
+        htop \
+        vim
 
 WORKDIR /workspace
 ENTRYPOINT ["/bin/bash"]
