@@ -29,7 +29,9 @@ From: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
         transformers \
         pytest \
         pre-commit \
-        torchprofile
+        torchprofile \
+        git+https://github.com/ninfueng/nincore.git@master \
+        git+https://github.com/ninfueng/nintorch.git@master
 
 %labels
     Author ninfueng

@@ -16,7 +16,9 @@ RUN pip3 install --no-cache \
     transformers \
     pytest \
     pre-commit \
-    torchprofile
+    torchprofile \
+    git+https://github.com/ninfueng/nincore.git@master \
+    git+https://github.com/ninfueng/nintorch.git@master
 
 RUN \
     apt update -y && \
