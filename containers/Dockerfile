@@ -32,7 +32,10 @@ RUN \
         zip \
         git \
         htop \
-        vim
+        vim \
+        tmux
+
+RUN wget https://gist.githubusercontent.com/ninfueng/736261c56b094f29704ace23cdace4a4/raw/fb181994fcfe15d598438f7ead454707ed9d7431/.vimrc -P ~
 
 WORKDIR /workspace
 ENTRYPOINT ["/bin/bash"]

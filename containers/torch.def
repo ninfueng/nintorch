@@ -15,7 +15,8 @@ From: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
         tar \
         zip \
         git \
-        vim
+        vim \
+        tmux
 
     conda update -n base -c defaults conda
     pip3 install --no-cache --upgrade pip
@@ -32,6 +33,7 @@ From: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
         torchprofile \
         git+https://github.com/ninfueng/nincore.git@master \
         git+https://github.com/ninfueng/nintorch.git@master
+    wget https://gist.githubusercontent.com/ninfueng/736261c56b094f29704ace23cdace4a4/raw/fb181994fcfe15d598438f7ead454707ed9d7431/.vimrc -P ~
 
 %labels
     Author ninfueng
