@@ -27,7 +27,7 @@ if __name__ == '__main__':
     group.add_argument('--eval-every-epoch', type=int, default=1)
     group.add_argument('--dist', action='store_true')
     group.add_argument('--yaml-dir', type=str, default=None)
-    group.add_argument('--load-dir', type=str, default='./exps/2023-10-11-18-25-13-543423/checkpoint/best.pt')
+    group.add_argument('--load-dir', type=str, default='./best.pt')
 
     group = parser.add_argument_group('training')
     group.add_argument('--model-name', type=str, default='resnet20')
