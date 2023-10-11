@@ -121,7 +121,6 @@ def count_sparse(
     If able to detect `torch.nn.utils.prune` will looks for `model.named_buffers`
     instead of `model.named_parameters`.
     """
-    # TODO: maybe using `AvgMeter` instead?
     is_pruned = prune.is_pruned(model)
     if is_pruned:
         named_paramaters = model.named_buffers()
@@ -130,7 +129,6 @@ def count_sparse(
 
     all_sparse_dict = {}
     sparses = AvgMeter()
-
     for name, param in named_paramaters:
         if not count_bias and name.find('bias') > -1:
             continue
@@ -138,7 +136,6 @@ def count_sparse(
         numel = param.numel()
         num_zero = numel - param.count_nonzero()
         sparse = num_zero / numel
-
         if return_layers:
             all_sparse_dict.update({name: sparse})
         else:

@@ -49,9 +49,7 @@ from torch.utils.data.distributed import DistributedSampler
 
 from nintorch.models import construct_model_cifar
 from nintorch.scheduler import WarmupLR
-from nintorch.utils import convert_layer
 from nintorch.utils.perform import disable_debug, enable_tf32, seed_torch, set_benchmark
-from reparam import ReparamConv2d, ReparamLinear
 from utils import get_data_conf, get_datasets, get_transforms, test_epoch, train_epoch
 
 if __name__ == '__main__':
@@ -67,8 +65,9 @@ if __name__ == '__main__':
 
     group = parser.add_argument_group('training')
     group.add_argument('--model-name', type=str, default='resnet20')
-    group.add_argument('--lr', type=float, default=1e-2)
-    group.add_argument('--opt', type=str, default='sgd')
+    group.add_argument('--lr', type=float, default=1e-3)
+    group.add_argument('--opt', type=str, default='adamw')
+    group.add_argument('--momentum', type=float, default=0.9)
     group.add_argument('--batch-size', type=int, default=128)
     group.add_argument('--seed', type=int, default=None)
     group.add_argument('--workers', type=int, default=min(os.cpu_count(), 8))
@@ -114,12 +113,13 @@ if __name__ == '__main__':
 
     log_rank_zero = lambda info: logging.info(info) if rank == 0 else None
     filter_warn()
-
     start = time.perf_counter()
+
+    yaml_log = ''
     if args.yaml_dir is not None:
         args = load_yaml(args.yaml_dir)
         args = AttrDict(args)
-        logging.info('Detect `args.yaml` is not None, use arguments in yaml file.')
+        yaml_log = f'Detect `args.yaml` is not None, use arguments in {args.yaml}'
 
     if args.dist:
         master_addr = os.environ['MASTER_ADDR']
@@ -163,22 +163,22 @@ if __name__ == '__main__':
             )
         os.makedirs(exp_dir, exist_ok=True)
         set_logger(os.path.join(exp_dir, 'info.log'), stdout=True)
+        log_rank_zero(yaml_log)
         log_rank_zero(pformat(args))
 
         backup_scripts(['*.py'], os.path.join(exp_dir, 'scripts'))
         cmd = 'python ' + reduce(lambda x, y: f'{x} {y}', sys.argv)
 
-        if args.seed is not None:
-            seed_torch(args.seed)
-
-        # https://discuss.ray.io/t/amp-mixed-precision-training-is-slower-than-default-precision/9842/7
-        enable_tf32(verbose=True) if not args.half else None
-        disable_debug(verbose=True)
-        set_benchmark(verbose=True)
-
         log_rank_zero(f'Run with the command line: `{cmd}`.')
     else:
         exp_dir = None
+
+    if args.seed is not None:
+        seed_torch(args.seed, verbose=True)
+    # https://discuss.ray.io/t/amp-mixed-precision-training-is-slower-than-default-precision/9842/7
+    enable_tf32(verbose=True) if not args.half else None
+    disable_debug(verbose=True)
+    set_benchmark(verbose=True)
 
     data_conf = get_data_conf(args.dataset)
     train_transforms, test_transforms = get_transforms(args, data_conf)
@@ -276,7 +276,7 @@ if __name__ == '__main__':
         opt=args.opt,
         lr=args.lr,
         weight_decay=args.weight_decay,
-        momentum=0.9,
+        momentum=args.momentum,
         filter_bias_and_bn=True,
     )
     log_rank_zero(optimizer)
@@ -290,7 +290,7 @@ if __name__ == '__main__':
             max_lr=args.lr,
         )
         args.epoch += args.warmup_epoch
-        log_rank_zero(f'Using warmup learning rate for `{args.warmup_epoch}` epochs.')
+        log_rank_zero(f'Using warmup learning rate for adamw`{args.warmup_epoch}` epochs.')
     else:
         warmup_scheduler = None
 
@@ -345,7 +345,7 @@ if __name__ == '__main__':
 
     if conf.rank == 0:
         runtime = second_to_ddhhmmss(end - start)
-        logging.info(f'Total run-time: {runtime} seconds.')
+        log_rank_zero(f'Total run-time: {runtime} seconds.')
         conf.runtime = runtime
         conf.to_json(os.path.join(conf.exp_dir, 'settings.json'))
 

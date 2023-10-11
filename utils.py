@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import torch
 import torchvision.transforms as T
@@ -60,27 +60,19 @@ def get_data_conf(dataset_name: str) -> AttrDict:
     return data_conf
 
 
-def get_transforms(conf: AttrDict, data_conf: AttrDict) -> Tuple[T.Compose, T.Compose]:
+def get_transforms(
+    conf: AttrDict, data_conf: AttrDict, only_test: bool = False
+) -> Union[T.Compose, Tuple[T.Compose, T.Compose]]:
     normalize = T.Normalize(data_conf.mean, data_conf.std)
-    train_transforms = create_transform(
-        input_size=data_conf.input_size[1],
-        is_training=True,
-        color_jitter=conf.color_jitter if conf.color_jitter else None,
-        auto_augment=conf.auto_augment_type if conf.auto_augment else None,
-        re_prob=conf.re_prob if conf.random_erasing else 0.0,
-        re_mode=conf.re_mode,
-        re_count=conf.recount,
-        interpolation=conf.interpolation,
-    )
-
+    use_cifar = False
     if (
         data_conf.dataset_name == 'cifar10'
         or data_conf.dataset_name == 'cifar100'
         or data_conf.dataset_name == 'cinic10'
     ):
         # For `cifar10` size of data, using with `RandomCrop` instead of `RandomResizedCrop`.
-        train_transforms.transforms[0] = T.RandomCrop(32, padding=4)
         test_transforms = T.Compose([T.ToTensor(), normalize])
+        use_cifar = True
     elif data_conf.dataset_name == 'imagenet':
         test_transforms = T.Compose(
             [
@@ -94,59 +86,85 @@ def get_transforms(conf: AttrDict, data_conf: AttrDict) -> Tuple[T.Compose, T.Co
         raise NotImplementedError(
             f'Support only `cifar10`, `cifar100`, `cinic10`, and `imagenet`, Your: `{data_conf.data_name}`'
         )
+
+    if only_test:
+        return test_transforms
+
+    train_transforms = create_transform(
+        input_size=data_conf.input_size[1],
+        is_training=True,
+        color_jitter=conf.color_jitter if conf.color_jitter else None,
+        auto_augment=conf.auto_augment_type if conf.auto_augment else None,
+        re_prob=conf.re_prob if conf.random_erasing else 0.0,
+        re_mode=conf.re_mode,
+        re_count=conf.recount,
+        interpolation=conf.interpolation,
+    )
+    if use_cifar:
+        train_transforms.transforms[0] = T.RandomCrop(32, padding=4)
+
     return (train_transforms, test_transforms)
 
 
 def get_datasets(
     data_conf: AttrDict,
-    train_transforms: T.Compose,
+    train_transforms: Optional[T.Compose],
     test_transforms: T.Compose,
     dataset_dir: Optional[str] = None,
-) -> Tuple[Dataset, Dataset]:
+    only_test: bool = False,
+) -> Union[Dataset, Tuple[Dataset, Dataset]]:
     if data_conf.dataset_name == 'cifar10':
-        train_dataset = CIFAR10(
-            root='./datasets',
-            train=True,
-            download=True,
-            transform=train_transforms,
-        )
         test_dataset = CIFAR10(
             root='./datasets',
             train=False,
             download=True,
             transform=test_transforms,
         )
-
-    elif data_conf.dataset_name == 'cifar100':
-        train_dataset = CIFAR100(
+        if only_test:
+            return test_dataset
+        train_dataset = CIFAR10(
             root='./datasets',
             train=True,
             download=True,
             transform=train_transforms,
         )
+
+    elif data_conf.dataset_name == 'cifar100':
         test_dataset = CIFAR100(
             root='./datasets',
             train=False,
             download=True,
             transform=test_transforms,
         )
+        if only_test:
+            return test_dataset
+        train_dataset = CIFAR100(
+            root='./datasets',
+            train=True,
+            download=True,
+            transform=train_transforms,
+        )
 
     elif data_conf.dataset_name == 'cinic10':
         dataset_dir = os.path.join('./datasets', 'cinic10')
-        train_dataset = CINIC10(root=dataset_dir, split='train', transforms=train_transforms)
         test_dataset = CINIC10(root=dataset_dir, split='test', transforms=test_transforms)
+        if only_test:
+            return test_dataset
+        train_dataset = CINIC10(root=dataset_dir, split='train', transforms=train_transforms)
 
     elif data_conf.dataset_name == 'imagenet':
         assert dataset_dir is not None, '`dataset_dir` should not be None, Please input in it.`'
         dataset_dir = os.path.expanduser(dataset_dir)
-        train_dataset = ImageFolder(os.path.join(dataset_dir, 'train'), train_transforms)
         test_dataset = ImageFolder(os.path.join(dataset_dir, 'val'), test_transforms)
+        if only_test:
+            return test_dataset
+        train_dataset = ImageFolder(os.path.join(dataset_dir, 'train'), train_transforms)
 
     else:
         raise NotImplementedError(
             f'`dataset` only supports `cifar10`, `cifar100`, `cinic10`, and `imagenet`, Your: `{data_conf.dataset}`'
         )
-    return train_dataset, test_dataset
+    return (train_dataset, test_dataset)
 
 
 def train_epoch(conf: AttrDict) -> None:
@@ -293,11 +311,15 @@ def test_epoch(conf: AttrDict) -> None:
                     if conf.half:
                         state.update(scaler_state_dict=conf.scaler.state_dict())
 
-                    save_dir = os.path.join(conf.exp_dir, 'checkpoint')
-                    os.makedirs(save_dir, exist_ok=True)
-
-                    save_model_dir = os.path.join(save_dir, 'best.pt')
+                    save_model_dir = os.path.join(conf.exp_dir, 'best.pt')
                     torch.save(state, save_model_dir)
-
                     logger.info(f'Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}')
                     conf.best_acc = best_acc
+
+    if conf.eval:
+        msg = (
+            f'Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
+            f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
+            f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+        )
+        print(msg)
