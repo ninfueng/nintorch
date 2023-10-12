@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 __all__ = ['PreloadImageFolder', 'cv_loader', 'pil_loader']
 
+
 pil_loader = default_loader
 
 
@@ -17,9 +18,11 @@ def cv_loader(img_dir: str) -> np.ndarray:
     return img
 
 
-# TODO: add supports to albumentations.
 class PreloadImageFolder(ImageFolder):
-    """Load all images into a list, but may consume a high RAM memory.
+    """Load all images into a list, however this may consume a large amount of RAM memory.
+
+    Arguments:
+        transforms_first: transforms all data after loading.
 
     Example:
     >>> imagefolder = PreloadImageFolder('~/datasets/imagenet/val/')
@@ -35,18 +38,28 @@ class PreloadImageFolder(ImageFolder):
         loader: Callable[[str], Any] = default_loader,
         is_valid_file: Optional[Callable[[str], bool]] = None,
         transform_first: bool = False,
+        albu: bool = False,
     ) -> None:
-        # Using
         super().__init__(root, transform, target_transform, loader, is_valid_file)
         imgs = self.samples
         pbar = tqdm(imgs)
         pbar.set_description('PreloadImageFolder')
 
+        def _wrap_albu_transforms(img: np.ndarray) -> np.ndarray:
+            transformed = transform(image=img)
+            img = transformed['image']
+            return img
+
         img_labels = []
         for img_dir, label in pbar:
             img = self.loader(img_dir)
+
             if transform_first and transform is not None:
-                img = transform(img)
+                if albu:
+                    img = _wrap_albu_transforms(img)
+                else:
+                    img = transform(img)
+
             if transform_first and target_transform is not None:
                 label = target_transform(label)
             img_labels.append((img, label))
@@ -54,9 +67,13 @@ class PreloadImageFolder(ImageFolder):
         # Already used a `loader` not need to use again.
         self.loader = lambda x: x
         self.samples = img_labels
+
         if transform_first:
             self.transform = lambda x: x
             self.target_transform = lambda x: x
+        else:
+            if transform is not None:
+                self.transforms = _wrap_albu_transforms
 
 
 if __name__ == '__main__':
