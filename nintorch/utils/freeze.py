@@ -23,9 +23,10 @@ __all__ = ['freeze_norm', 'freeze_except']
 def freeze_norm(model: nn.Module, verbose: bool = False) -> None:
     """Disable statistic tracking and training of Norm layers like: `InstanceNorm` or `BatchNorm`.
 
-    Arguments:
+    Args:
         model: a model to freeze the batch normalization
         verbose: whether to logging name of freeze modules or not.
+
     Returns:
         None
 
