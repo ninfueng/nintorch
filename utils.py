@@ -323,3 +323,80 @@ def test_epoch(conf: AttrDict) -> None:
             f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
         )
         print(msg)
+
+
+from renormalize import rescale_output
+
+
+@torch.inference_mode()
+def test_epoch_bit_flip(conf: AttrDict) -> None:
+    conf.model.eval()
+    test_len = len(conf.test_loader)
+    top1, top5, losses = AvgMeter(), AvgMeter(), AvgMeter()
+
+    for batch_idx, (inputs, targets) in enumerate(conf.test_loader):
+        inputs = inputs.to(conf.device, non_blocking=True)
+        targets = targets.to(conf.device, non_blocking=True)
+        outputs = conf.model(inputs)
+        outputs = rescale_output(conf.model, outputs, conf.scale_dict)
+        loss = conf.test_criterion(outputs, targets)
+
+        acc1, acc5 = accuracy(outputs, targets, (1, 5))
+        batch_size = targets.size(0)
+        top1.update(acc1.item(), batch_size)
+        top5.update(acc5.item(), batch_size)
+        losses.update(loss.item(), batch_size)
+
+        if conf.dist and batch_idx == test_len - 1:
+            top1.all_reduce()
+            top5.all_reduce()
+            losses.all_reduce()
+
+        if (batch_idx + 1) % conf.log_interval == 0 or batch_idx == test_len - 1 and conf.rank == 0:
+            msg = (
+                f'Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
+                f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
+                f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+            )
+            logging.info(msg)
+
+            if batch_idx == test_len - 1:
+                if conf.wandb:
+                    wandb.log(
+                        {'test_loss': losses.avg, 'test_acc': top1.avg},
+                        step=conf.epoch_idx,
+                    )
+
+                if top1.avg > conf.best_acc:
+                    # https://github.com/pytorch/pytorch/issues/9176#issuecomment-403570715
+                    try:
+                        model_state_dict = conf.model.module.state_dict()
+                    except AttributeError:
+                        model_state_dict = conf.model.state_dict()
+
+                    best_acc = top1.avg
+                    # Cannot use with `AttrDict`. Must use with `dict` to save.
+                    state = AttrDict(
+                        model_state_dict=model_state_dict,
+                        optimizer_state_dict=conf.optimizer.state_dict(),
+                        scheduler_state_dict=conf.scheduler.state_dict(),
+                        accuracy=best_acc,
+                        epoch=conf.epoch_idx,
+                        seed=conf.seed,
+                        rng_state=torch.get_rng_state(),
+                    )
+                    if conf.half:
+                        state.update(scaler_state_dict=conf.scaler.state_dict())
+
+                    save_model_dir = os.path.join(conf.exp_dir, 'best.pt')
+                    torch.save(state, save_model_dir)
+                    logger.info(f'Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}')
+                    conf.best_acc = best_acc
+
+    if conf.eval:
+        msg = (
+            f'Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
+            f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
+            f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+        )
+        print(msg)

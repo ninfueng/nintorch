@@ -64,7 +64,8 @@ if __name__ == '__main__':
     group.add_argument('--yaml-dir', type=str, default=None)
 
     group = parser.add_argument_group('training')
-    group.add_argument('--model-name', type=str, default='resnet20')
+    # group.add_argument('--model-name', type=str, default='resnet20')
+    group.add_argument('--model-name', type=str, default='lenet5')
     group.add_argument('--lr', type=float, default=1e-3)
     group.add_argument('--opt', type=str, default='adamw')
     group.add_argument('--momentum', type=float, default=0.9)
@@ -251,6 +252,19 @@ if __name__ == '__main__':
     if args.compile:
         model = torch.compile(model)
     log_rank_zero(model)
+
+    from nineff.low.ternary import TerConv2d, TerLinear
+
+    from bin_quant import BinConv2d, BinLinear
+    from nintorch.utils import convert_layer
+    from reparam import ReparamConv2d, ReparamLinear
+
+    # convert_layer(model, nn.Conv2d, TerConv2d)
+    # convert_layer(model, nn.Linear, TerLinear)
+    # convert_layer(model, nn.Conv2d, BinConv2d)
+    # convert_layer(model, nn.Linear, BinLinear)
+    # convert_layer(model, nn.Conv2d, ReparamConv2d)
+    # convert_layer(model, nn.Linear, ReparamLinear)
 
     if args.mixup:
         criterion = SoftTargetCrossEntropy()

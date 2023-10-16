@@ -20,7 +20,7 @@ class ReparamLinear(nn.Linear):
         in_features: int,
         out_features: int,
         bias: bool,
-        reparam_fn: Callable[..., Tensor] = F.tanh,
+        reparam_fn: Callable[..., Tensor] = F.gelu,
     ) -> None:
         super().__init__(in_features, out_features, bias)
         self.reparam_fn = reparam_fn
@@ -43,7 +43,7 @@ class ReparamConv2d(nn.Conv2d):
         groups: int = 1,
         bias: bool = True,
         padding_mode: str = 'zeros',
-        reparam_fn: Callable[..., Callable] = F.tanh,
+        reparam_fn: Callable[..., Callable] = F.gelu,
     ) -> None:
         super().__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode)
         self.reparam_fn = reparam_fn
