@@ -7,7 +7,7 @@ from nincore.utils import AvgMeter
 from torch import Tensor, nn
 from torch.nn.utils import prune
 
-__all__ = ['count_params', 'count_macs', 'count_size', 'count_sparse', 'count_latency']
+__all__ = ['count_params', 'count_macs', 'count_size', 'count_sparse', 'count_sparse_module', 'count_latency']
 
 
 @torch.no_grad()
@@ -111,7 +111,15 @@ def count_macs(
 
 
 @torch.no_grad()
-def count_sparse(
+def count_sparse(param: Tensor) -> float:
+    numel = param.numel()
+    num_zero = numel - param.count_nonzero()
+    sparse = num_zero / numel
+    return sparse.item()
+
+
+@torch.no_grad()
+def count_sparse_module(
     model: nn.Module,
     count_bias: bool = True,
     return_layers: bool = False,
@@ -133,13 +141,12 @@ def count_sparse(
         if not count_bias and name.find('bias') > -1:
             continue
 
+        sparse = count_sparse(param)
         numel = param.numel()
-        num_zero = numel - param.count_nonzero()
-        sparse = num_zero / numel
         if return_layers:
             all_sparse_dict.update({name: sparse})
         else:
-            sparses.update(sparse.item(), numel)
+            sparses.update(sparse, numel)
 
     if return_layers:
         return all_sparse_dict

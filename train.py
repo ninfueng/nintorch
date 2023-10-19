@@ -64,15 +64,14 @@ if __name__ == '__main__':
     group.add_argument('--yaml-dir', type=str, default=None)
 
     group = parser.add_argument_group('training')
-    # group.add_argument('--model-name', type=str, default='resnet20')
-    group.add_argument('--model-name', type=str, default='lenet5')
+    group.add_argument('--model-name', type=str, default='resnet20')
     group.add_argument('--lr', type=float, default=1e-3)
     group.add_argument('--opt', type=str, default='adamw')
     group.add_argument('--momentum', type=float, default=0.9)
     group.add_argument('--batch-size', type=int, default=128)
     group.add_argument('--seed', type=int, default=None)
     group.add_argument('--workers', type=int, default=min(os.cpu_count(), 8))
-    group.add_argument('--weight-decay', type=float, default=1e-4)
+    group.add_argument('--weight-decay', type=float, default=0.0)
     group.add_argument('--warmup-epoch', type=int, default=5)
     group.add_argument('--epoch', type=int, default=200)
     group.add_argument('--clip-grad', type=float, default=0.0)
@@ -81,9 +80,10 @@ if __name__ == '__main__':
     group.add_argument('--grad-accum', type=int, default=None)
     group.add_argument('--exp-dir', type=str, default=None)
     group.add_argument('--label-smoothing', action='store_true')
-    group.add_argument('--half', action='store_true')
     group.add_argument('--wandb', action='store_true')
+    group.add_argument('--half', action='store_true')
     group.add_argument('--compile', action='store_true')
+    group.add_argument('--chl-last', action='store_true')
 
     group = parser.add_argument_group('mixup')
     group.add_argument('--mixup', action='store_true')
@@ -248,23 +248,10 @@ if __name__ == '__main__':
         model = getattr(torchvision.models, args.model_name)(pretrained=False, num_classes=data_conf.num_classes)
         log_rank_zero(f'Construct a `{args.model_name}` model from `torchvision.models`')
 
-    model = model.to(device)
+    model = model.to(device, non_blocking=True, memory_format=torch.channels_last if args.chl_last else None)
     if args.compile:
         model = torch.compile(model)
     log_rank_zero(model)
-
-    from nineff.low.ternary import TerConv2d, TerLinear
-
-    from bin_quant import BinConv2d, BinLinear
-    from nintorch.utils import convert_layer
-    from reparam import ReparamConv2d, ReparamLinear
-
-    # convert_layer(model, nn.Conv2d, TerConv2d)
-    # convert_layer(model, nn.Linear, TerLinear)
-    # convert_layer(model, nn.Conv2d, BinConv2d)
-    # convert_layer(model, nn.Linear, BinLinear)
-    # convert_layer(model, nn.Conv2d, ReparamConv2d)
-    # convert_layer(model, nn.Linear, ReparamLinear)
 
     if args.mixup:
         criterion = SoftTargetCrossEntropy()
