@@ -26,8 +26,8 @@ if __name__ == '__main__':
     group.add_argument('--run-name', type=str, default='nintorch')
     group.add_argument('--log-interval', type=int, default=float('inf'))
     group.add_argument('--yaml-dir', type=str, default=None)
-    # group.add_argument('--load-dir', type=str, default='./binary/best.pt')
-    group.add_argument('--load-dir', type=str, default='./ternary/best.pt')
+    group.add_argument('--load-dir', type=str, default='./binary/best.pt')
+    # group.add_argument('--load-dir', type=str, default='./ternary/best.pt')
 
     group = parser.add_argument_group('training')
     group.add_argument('--model-name', type=str, default='resnet20')
@@ -103,11 +103,10 @@ if __name__ == '__main__':
     from nintorch.utils import convert_layer
 
     # from bit_flip import inject_bit_flip_module
-
-    convert_layer(model, nn.Conv2d, TerConv2d)
-    convert_layer(model, nn.Linear, TerLinear)
-    # convert_layer(model, nn.Conv2d, BinConv2d)
-    # convert_layer(model, nn.Linear, BinLinear)
+    # convert_layer(model, nn.Conv2d, TerConv2d)
+    # convert_layer(model, nn.Linear, TerLinear)
+    convert_layer(model, nn.Conv2d, BinConv2d)
+    convert_layer(model, nn.Linear, BinLinear)
 
     state_dict = torch.load(args.load_dir)
     model_state_dict = state_dict['model_state_dict']

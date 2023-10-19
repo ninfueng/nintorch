@@ -47,12 +47,13 @@ def inject_bit_flip(input: np.ndarray, p: float) -> np.ndarray:
     return np.logical_xor(input, mask)
 
 
-# TER_CODEWORD = {
-#     -2: np.array([True, False], dtype=bool),
-#     -1: np.array([True, True] , dtype=bool),
-#     0: np.array([False, False], dtype=bool),
-#     1: np.array([False, True] , dtype=bool),
-# }
+# INT2 representation
+TER_CODEWORD = {
+    -2: np.array([True, False], dtype=bool),
+    -1: np.array([True, True], dtype=bool),
+    0: np.array([False, False], dtype=bool),
+    1: np.array([False, True], dtype=bool),
+}
 
 # No good
 # TER_CODEWORD = {
@@ -91,6 +92,6 @@ def inject_bit_flip_module(model: nn.Module, WER: float) -> None:
 
             quant_weight_flip = inject_bit_flip(quant_weight, p=WER)
             quant_weight_flip = bin_to_ter(quant_weight_flip, TER_CODEWORD)
-            quant_weight_flip[quant_weight_flip == -2] = 0
+            # quant_weight_flip[quant_weight_flip == -2] = 0
             quant_weight_flip = torch.from_numpy(quant_weight_flip).float()
             m.weight = nn.Parameter(quant_weight_flip)

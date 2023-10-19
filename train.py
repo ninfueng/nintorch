@@ -248,6 +248,21 @@ if __name__ == '__main__':
         model = getattr(torchvision.models, args.model_name)(pretrained=False, num_classes=data_conf.num_classes)
         log_rank_zero(f'Construct a `{args.model_name}` model from `torchvision.models`')
 
+    from nineff.low.ternary import TerConv2d, TerLinear
+
+    from bin_aware import BinAwareCrossEntropy
+    from bin_quant import BinConv2d, BinLinear
+    from nintorch.utils import convert_layer
+    from reparam import ReparamConv2d, ReparamLinear
+
+    # convert_layer(model, nn.Conv2d, TerConv2d)
+    # convert_layer(model, nn.Linear, TerLinear)
+    # convert_layer(model, nn.Conv2d, BinConv2d)
+    # convert_layer(model, nn.Linear, BinLinear)
+    # convert_layer(model, nn.Conv2d, ReparamConv2d)
+    # convert_layer(model, nn.Linear, ReparamLinear)
+    # criterion = BinAwareCrossEntropy(model)
+
     model = model.to(device, non_blocking=True, memory_format=torch.channels_last if args.chl_last else None)
     if args.compile:
         model = torch.compile(model)
