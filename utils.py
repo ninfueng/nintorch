@@ -173,7 +173,7 @@ def train_epoch(conf: AttrDict) -> None:
     top1, top5, losses = AvgMeter(), AvgMeter(), AvgMeter()
 
     for batch_idx, (inputs, targets) in enumerate(conf.train_loader):
-        inputs = inputs.to(conf.device, non_blocking=True)
+        inputs = inputs.to(conf.device, non_blocking=True, memory_format=torch.channels_last if conf.chl_last else None)
         targets = targets.to(conf.device, non_blocking=True)
         # https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html
         conf.optimizer.zero_grad(set_to_none=True)
@@ -259,7 +259,7 @@ def test_epoch(conf: AttrDict) -> None:
     top1, top5, losses = AvgMeter(), AvgMeter(), AvgMeter()
 
     for batch_idx, (inputs, targets) in enumerate(conf.test_loader):
-        inputs = inputs.to(conf.device, non_blocking=True)
+        inputs = inputs.to(conf.device, non_blocking=True, memory_format=torch.channels_last if conf.chl_last else None)
         targets = targets.to(conf.device, non_blocking=True)
         outputs = conf.model(inputs)
         loss = conf.test_criterion(outputs, targets)
