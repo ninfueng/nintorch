@@ -204,7 +204,7 @@ if __name__ == '__main__':
         log_rank_zero('Not using `mixup` data augmentation.')
 
     if args.subset_idx_load_dir is not None:
-        log_rank_zero(f'Detect `args.subset_idx_load_dir is not None`.' 'Use subset of training dataset.')
+        log_rank_zero(f'Detect `args.subset_idx_load_dir is not None`. Use subset of training dataset.')
         subset_idx = torch.load(args.subset_idx_load_dir)
         train_dataset = Subset(train_dataset, subset_idx)
         log_rank_zero(f'Using subset with training data shape: `{subset_idx.shape}`.')
@@ -251,12 +251,13 @@ if __name__ == '__main__':
     model = model.to(device, non_blocking=True, memory_format=torch.channels_last if args.chl_last else None)
     if args.compile:
         model = torch.compile(model)
+        log_rank_zero(f'Use `torch.compile` with default settings.')
     log_rank_zero(model)
 
     if args.mixup:
         criterion = SoftTargetCrossEntropy()
         log_rank_zero(
-            f'Detect mixup, using `SoftTargetCrossEntropy` with' f'label smoothing: {args.mixup_label_smoothing}'
+            f'Detect mixup, using `SoftTargetCrossEntropy` with label smoothing: {args.mixup_label_smoothing}'
         )
     elif args.label_smoothing and args.mixup_label_smoothing > 0.0:
         criterion = LabelSmoothingCrossEntropy(smoothing=args.mixup_label_smoothing)
