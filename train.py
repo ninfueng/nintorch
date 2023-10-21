@@ -50,7 +50,7 @@ from torch.utils.data.distributed import DistributedSampler
 from nintorch.models import construct_model_cifar
 from nintorch.scheduler import WarmupLR
 from nintorch.utils.perform import disable_debug, enable_tf32, seed_torch, set_benchmark
-from utils import get_data_conf, get_datasets, get_transforms, test_epoch, train_epoch
+from utils import get_data_conf, get_datasets, get_transforms, load_model_optim_sche, test_epoch, train_epoch
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='classification scripts')
@@ -84,6 +84,7 @@ if __name__ == '__main__':
     group.add_argument('--half', action='store_true')
     group.add_argument('--compile', action='store_true')
     group.add_argument('--chl-last', action='store_true')
+    group.add_argument('--load-dir', type=str, default=None)
 
     group = parser.add_argument_group('mixup')
     group.add_argument('--mixup', action='store_true')
@@ -249,11 +250,6 @@ if __name__ == '__main__':
         log_rank_zero(f'Construct a `{args.model_name}` model from `torchvision.models`')
 
     model = model.to(device, non_blocking=True, memory_format=torch.channels_last if args.chl_last else None)
-    if args.compile:
-        model = torch.compile(model)
-        log_rank_zero(f'Use `torch.compile` with default settings.')
-    log_rank_zero(model)
-
     if args.mixup:
         criterion = SoftTargetCrossEntropy()
         log_rank_zero(
@@ -309,6 +305,17 @@ if __name__ == '__main__':
     if not args.dist:
         model = nn.DataParallel(model)
         log_rank_zero('Wrap model with `nn.DataParallel`.')
+
+    if args.compile:
+        model = torch.compile(model)
+        log_rank_zero(f'Use `torch.compile` with default settings.')
+
+    if args.load_dir is not None:
+        _model = model
+        if hasattr(model, 'module'):
+            _model = model.module
+        acc, start_epoch = load_model_optim_sche(args.load_dir, _model, optimizer, scheduler)
+        log_rank_zero(f'Load a model with Acc: {acc}, Epoch: {start_epoch} from `{args.load_dir}`.')
 
     conf = AttrDict(
         device=gpu_idx if args.dist else device,
