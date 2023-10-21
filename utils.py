@@ -9,6 +9,7 @@ from nincore import AttrDict
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.data.transforms_factory import create_transform
 from timm.utils import accuracy
+from torch import nn
 from torch.cuda.amp import autocast
 from torch.utils.data import Dataset
 from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
@@ -165,6 +166,30 @@ def get_datasets(
             f'`dataset` only supports `cifar10`, `cifar100`, `cinic10`, and `imagenet`, Your: `{data_conf.dataset}`'
         )
     return (train_dataset, test_dataset)
+
+
+def load_model_optim_sche(
+    load_dir: str,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler._LRScheduler,
+) -> Tuple[float, int]:
+    """Load a model, optimizer, and scheduler from a .pt with `load_dir` directory."""
+
+    load_dir = os.path.expanduser(load_dir)
+    state_dict = torch.load(load_dir)
+
+    model_state_dict = state_dict['model_state_dict']
+    optimizer_state_dict = state_dict['optimizer_state_dict']
+    scheduler_state_dict = state_dict['scheduler_state_dict']
+
+    model.load_state_dict(model_state_dict, strict=False)
+    optimizer.load_state_dict(optimizer_state_dict)
+    scheduler.load_state_dict(scheduler_state_dict)
+
+    accuracy = state_dict['accuracy']
+    start_epoch = state_dict['epoch']
+    return (accuracy, start_epoch)
 
 
 def train_epoch(conf: AttrDict) -> None:
