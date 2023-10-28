@@ -58,7 +58,7 @@ if __name__ == '__main__':
     group.add_argument('--project-name', type=str, default='nintorch')
     group.add_argument('--run-name', type=str, default='nintorch')
     group.add_argument('--model-log-freq', type=int, default=None)
-    group.add_argument('--log-interval', type=int, default=float('inf'))
+    group.add_argument('--log-freq', type=int, default=float('inf'))
     group.add_argument('--eval-every-epoch', type=int, default=1)
     group.add_argument('--dist', action='store_true')
     group.add_argument('--yaml-dir', type=str, default=None)
@@ -184,7 +184,7 @@ if __name__ == '__main__':
 
     data_conf = get_data_conf(args.dataset)
     train_transforms, test_transforms = get_transforms(args, data_conf)
-    train_dataset, test_dataset = get_datasets(data_conf, train_transforms, test_transforms)
+    train_dataset, test_dataset = get_datasets(data_conf, train_transforms, test_transforms, args.dataset_dir)
     log_rank_zero(train_transforms)
     log_rank_zero(test_transforms)
 

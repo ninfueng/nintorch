@@ -114,6 +114,9 @@ def get_datasets(
     dataset_dir: Optional[str] = None,
     only_test: bool = False,
 ) -> Union[Dataset, Tuple[Dataset, Dataset]]:
+    if dataset_dir is not None:
+        dataset_dir = os.path.expanduser(dataset_dir)
+
     if data_conf.dataset_name == 'cifar10':
         test_dataset = CIFAR10(
             root='./datasets',
@@ -155,7 +158,6 @@ def get_datasets(
 
     elif data_conf.dataset_name == 'imagenet':
         assert dataset_dir is not None, '`dataset_dir` should not be None, Please input in it.`'
-        dataset_dir = os.path.expanduser(dataset_dir)
         test_dataset = ImageFolder(os.path.join(dataset_dir, 'val'), test_transforms)
         if only_test:
             return test_dataset
@@ -251,8 +253,8 @@ def train_epoch(conf: AttrDict) -> None:
             top5.all_reduce()
             losses.all_reduce()
 
-        # If `conf.rank == 0`, allows only every `conf.log_interval` or on the last iterations.
-        if (batch_idx + 1) % conf.log_interval == 0 or batch_idx == train_len - 1 and conf.rank == 0:
+        # If `conf.rank == 0`, allows only every `conf.log_freq` or on the last iterations.
+        if (batch_idx + 1) % conf.log_freq == 0 or batch_idx == train_len - 1 and conf.rank == 0:
             first_param = conf.optimizer.param_groups[0]
             cur_lr = first_param['lr']
             msg = (
@@ -300,7 +302,7 @@ def test_epoch(conf: AttrDict) -> None:
             top5.all_reduce()
             losses.all_reduce()
 
-        if (batch_idx + 1) % conf.log_interval == 0 or batch_idx == test_len - 1 and conf.rank == 0:
+        if (batch_idx + 1) % conf.log_freq == 0 or batch_idx == test_len - 1 and conf.rank == 0:
             msg = (
                 f'Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
                 f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
