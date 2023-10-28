@@ -255,6 +255,7 @@ if __name__ == '__main__':
     from bin_quant import BinConv2d, BinLinear
     from nintorch.utils import convert_layer
     from reparam import ReparamConv2d, ReparamLinear
+    from swin_mlp import SwinMLP
 
     # convert_layer(model, nn.Conv2d, TerConv2d)
     # convert_layer(model, nn.Linear, TerLinear)
@@ -263,7 +264,8 @@ if __name__ == '__main__':
     # convert_layer(model, nn.Conv2d, ReparamConv2d)
     # convert_layer(model, nn.Linear, ReparamLinear)
     # criterion = BinAwareCrossEntropy(model)
-
+    model = SwinMLP()
+    print(model)
     model = model.to(device, non_blocking=True, memory_format=torch.channels_last if args.chl_last else None)
     if args.compile:
         model = torch.compile(model)
