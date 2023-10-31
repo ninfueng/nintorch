@@ -83,11 +83,12 @@ class LinearNormAct(nn.Sequential):
         in_features: int,
         out_features: int,
         bias: bool = True,
+        linear: Callable[..., nn.Module] = nn.Linear,
         norm: Optional[Callable[..., nn.Module]] = nn.BatchNorm1d,
         act: Optional[Callable[..., nn.Module]] = nn.ReLU,
     ) -> None:
         layers = nn.ModuleList()
-        linear = nn.Linear(in_features, out_features, bias)
+        linear = linear(in_features, out_features, bias)
         layers.append(linear)
         if norm is not None:
             layers.append(norm(out_features))
