@@ -1,5 +1,5 @@
 BootStrap: docker
-From: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
+From: pytorch/pytorch:2.1.0-cuda12.1-cudnn8-devel
 
 %environment
    export LC_ALL=C
@@ -42,7 +42,7 @@ From: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
 %help
     PyTorch singularity
 
-    Install: https://docs.sylabs.io/guides/4.0/user-guide/quick_start.html
+    Install: https://docs.sylabs.io/guides/4.1/user-guide/quick_start.html
     Build: `sudo singularity build torch.sif torch.def`
     Run:   `singularity exec --nv torch.sif python main.py`
     Shell: `singularity shell --nv torch.sif`
