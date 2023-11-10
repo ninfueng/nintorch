@@ -8,14 +8,14 @@ __all__ = ['VotingEnsemble']
 
 
 class VotingEnsemble(nn.Module):
-    """Ensemble by averaging all output logits."""
+    """Ensemble by averaging or voting output logits."""
 
     def __init__(self, models: Sequence[nn.Module], mode: str = 'soft') -> None:
         super().__init__()
-        assert mode in [
+        assert mode in (
             'soft',
             'hard',
-        ], f'`mode` should be in `[soft, hard]`. Your: {mode}.'
+        ), f'`mode` should be in `(soft, hard)`. Your: {mode}.'
         self.models = nn.ModuleList(models)
         self.mode = mode
 
@@ -31,20 +31,20 @@ class VotingEnsemble(nn.Module):
 
     @torch.inference_mode()
     def _forward_avg(self, input: Tensor) -> Tensor:
-        mean = 0.0
-        for model in self.models:
-            pred = model(input)
-            mean += pred
-        mean /= len(self.models)
-        return mean
+        preds = [model(input) for model in self.models]
+        preds = torch.stack(preds, dim=-1)
+        return preds.mean(dim=-1)
 
     @torch.inference_mode()
     def _forward_vote(self, input: Tensor) -> Tensor:
-        votes = []
-        for model in self.models:
-            pred = model(input)
-            vote = pred.argmax(dim=-1)
-            votes.append(vote)
+        votes = [model(input).argmax(dim=-1) for model in self.models]
         votes = torch.stack(votes, dim=-1)
         votes, _ = torch.mode(votes, dim=-1)
         return votes
+
+
+if __name__ == '__main__':
+    ens = VotingEnsemble([nn.Linear(10, 1), nn.Linear(10, 1)])
+    input = torch.randn(2, 10)
+    output = ens(input)
+    print(output.shape)
