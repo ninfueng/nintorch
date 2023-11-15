@@ -2,17 +2,16 @@ from torch import Tensor, nn
 
 
 def get_bin_aware_loss(model: nn.Module, max_range: float = 2.0, alpha: float = 1e-4) -> Tensor:
-    all_abs_loss = 0.0
+    abs_losses = 0.0
     for name, param in model.named_parameters():
         if name.endswith('weight'):
             if param.ndim < 2:
                 continue
-
             abs_param = param.abs()
             abs_loss = max_range - abs_param[abs_param < max_range]
-            # TODO: .sum() or .mean()?
-            all_abs_loss += abs_loss.mean()
-    return all_abs_loss * alpha
+            abs_losses += abs_loss.mean()
+    abs_losses *= alpha
+    return abs_losses
 
 
 class BinAwareCrossEntropy(nn.CrossEntropyLoss):

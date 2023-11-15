@@ -12,8 +12,7 @@ from typing import Dict, Tuple
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torchvision.models import convnext_base, mobilenet_v2, resnet18, vgg11, vgg11_bn
+from torchvision.models import vgg11_bn
 
 
 def get_minmax(model: nn.Module, thres: float = 2.0) -> Dict[str, Tuple[float, float]]:

@@ -265,7 +265,6 @@ if __name__ == '__main__':
     # convert_layer(model, nn.Linear, ReparamLinear)
     # criterion = BinAwareCrossEntropy(model)
     model = SwinMLP()
-    print(model)
     model = model.to(device, non_blocking=True, memory_format=torch.channels_last if args.chl_last else None)
     if args.compile:
         model = torch.compile(model)

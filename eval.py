@@ -35,6 +35,7 @@ if __name__ == '__main__':
     group.add_argument('--batch-size', type=int, default=128)
     group.add_argument('--workers', type=int, default=min(os.cpu_count(), 8))
     group.add_argument('--dataset', type=str, default='cifar10')
+    group.add_argument('--wer', type=float, default=1e-2)
     group.add_argument('--compile', action='store_true')
 
     group = parser.add_argument_group('imagenet')
@@ -112,7 +113,7 @@ if __name__ == '__main__':
     model_state_dict = state_dict['model_state_dict']
     model.load_state_dict(model_state_dict, strict=False)
 
-    inject_bit_flip_module(model, 1e-2)
+    inject_bit_flip_module(model, args.wer)
     # model = sim_write_error_protection(model, 1e-4, excepts=[1])
     model = model.to(device)
     model = model.eval()

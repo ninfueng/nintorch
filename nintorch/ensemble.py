@@ -15,7 +15,7 @@ class VotingEnsemble(nn.Module):
         assert mode in [
             'soft',
             'hard',
-        ], f'`mode` should be in `[soft, hard]`. Your: {mode}.'
+        ], f'`mode` should be in `(soft, hard)`. Your: {mode}.'
         self.models = nn.ModuleList(models)
         self.mode = mode
 

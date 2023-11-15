@@ -1,17 +1,21 @@
-"""Reparameterization weight layers:
-
-Not Works: `F.sigmoid`
+"""Just using activation function to reparameterize the weight.
 
 Works:
 * `F.tanh`
 * `F.hardtanh`
 * `F.softsign`
 * `torch.arctan`
+
+Not Works:
+* `F.sigmoid`
+* `F.relu`
 """
 from typing import Callable
 
 import torch.nn.functional as F
 from torch import Tensor, nn
+
+__all__ = ['ReparamLinear', 'ReparamConv2d']
 
 
 class ReparamLinear(nn.Linear):
