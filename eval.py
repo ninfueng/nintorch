@@ -1,8 +1,6 @@
 import argparse
-import datetime
 import os
 import time
-from pprint import pformat
 
 import torch
 import torch.nn as nn
@@ -10,7 +8,7 @@ import torchvision.models
 from nincore import AttrDict
 from nincore.io import load_yaml
 from nincore.time import second_to_ddhhmmss
-from nincore.utils import filter_warn, set_logger
+from nincore.utils import filter_warn
 from torch.utils.data import DataLoader
 
 from nintorch.models import construct_model_cifar
@@ -18,23 +16,17 @@ from nintorch.utils.perform import disable_debug, enable_tf32, seed_torch, set_b
 from utils import get_data_conf, get_datasets, get_transforms, test_epoch
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='classification scripts')
+    parser = argparse.ArgumentParser(description='classification evaluation scripts')
     group = parser.add_argument_group('project')
-    group.add_argument('--project-name', type=str, default='nintorch')
-    group.add_argument('--run-name', type=str, default='nintorch')
-    group.add_argument('--model-log-freq', type=int, default=None)
-    group.add_argument('--log-interval', type=int, default=float('inf'))
-    group.add_argument('--eval-every-epoch', type=int, default=1)
-    group.add_argument('--dist', action='store_true')
+    group.add_argument('--log-freq', type=int, default=float('inf'))
     group.add_argument('--yaml-dir', type=str, default=None)
-    group.add_argument('--load-dir', type=str, default='./best.pt')
+    group.add_argument('--load-dir', type=str, default=None)
+    group.add_argument('--exp-dir', type=str, default='exps')
 
     group = parser.add_argument_group('training')
     group.add_argument('--model-name', type=str, default='resnet20')
-    group.add_argument('--lr', type=float, default=1e-3)
     group.add_argument('--opt', type=str, default='adamw')
     group.add_argument('--batch-size', type=int, default=128)
-    group.add_argument('--seed', type=int, default=None)
     group.add_argument('--workers', type=int, default=min(os.cpu_count(), 8))
     group.add_argument('--dataset', type=str, default='cifar10')
     group.add_argument('--compile', action='store_true')
@@ -51,17 +43,6 @@ if __name__ == '__main__':
         args = load_yaml(args.yaml_dir)
         args = AttrDict(args)
         yaml_log = f'Detect `args.yaml` is not None, use arguments in {args.yaml}'
-
-        exp_dir = args.exp_dir
-        if exp_dir is None:
-            exp_dir = os.path.join(
-                'exps',
-                str(datetime.datetime.now()).replace(':', '-').replace('.', '-').replace(' ', '-'),
-            )
-        os.makedirs(exp_dir, exist_ok=True)
-        set_logger(os.path.join(exp_dir, 'info.log'), stdout=True)
-        print(yaml_log)
-        print(pformat(args))
 
     if args.seed is not None:
         seed_torch(args.seed, verbose=True)
@@ -99,18 +80,35 @@ if __name__ == '__main__':
     if args.compile:
         model = torch.compile(model)
 
-    state_dict = torch.load(args.load_dir)
-    model_state_dict = state_dict['model_state_dict']
+    if args.load_dir is not None:
+        load_dir = os.path.expanduser(args.load_dir)
+        state_dict = torch.load(args.load_dir)
+        model_state_dict = state_dict['model_state_dict']
+    else:
+        if args.exp_dir is None:
+            raise ValueError('Both `args.load_dir` and `args.exp_dir` are None. Please specify one of them.')
+        try:
+            exp_dir = os.path.expanduser(args.exp_dir)
+        except FileNotFoundError:
+            raise FileNotFoundError(f'No file in `args.exp_dir`, Your: `{args.exp_dir}`.')
+        exp_dirs = os.listdir(exp_dir)
+        exp_dirs.sort()
+
+        last_exp_dir = os.path.join(exp_dir, exp_dirs[-1], 'best.pt')
+        state_dict = torch.load(last_exp_dir)
+        model_state_dict = state_dict['model_state_dict']
+        print(f'Detect `args.load_dir` is None, load the latest version from: `{last_exp_dir}`')
+
     model.load_state_dict(model_state_dict, strict=False)
+    model = model.to(device)
+    model = model.eval()
 
     conf = AttrDict(
         device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
         test_loader=test_loader,
         model=model,
         best_acc=0.0,
-        grad_accum=args.grad_accum,
         log_interval=args.log_interval,
-        dist=args.dist,
         test_criterion=nn.CrossEntropyLoss(reduction='mean'),
         eval=True,
     )
@@ -121,4 +119,3 @@ if __name__ == '__main__':
     end = time.perf_counter()
     runtime = second_to_ddhhmmss(end - start)
     print(f'Total run-time: {runtime} seconds.')
-    del test_loader
