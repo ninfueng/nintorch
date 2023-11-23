@@ -6,7 +6,7 @@ however, merge batch normalization is possible.
 sigmoid is not work without associative property.
 relu is work.
 
-Preferred range: (-2, 1] or [1, 2)
+Preferred range: (-2, 1] or [1, 2), however this may got Inf problems.
 """
 from typing import Dict, Tuple
 
