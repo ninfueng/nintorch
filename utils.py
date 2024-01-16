@@ -151,17 +151,25 @@ def get_datasets(
 
     elif data_conf.dataset_name == 'cinic10':
         dataset_dir = os.path.join('./datasets', 'cinic10')
-        test_dataset = CINIC10(root=dataset_dir, split='test', transforms=test_transforms)
+        test_dataset = CINIC10(
+            root=dataset_dir, split='test', transforms=test_transforms
+        )
         if only_test:
             return test_dataset
-        train_dataset = CINIC10(root=dataset_dir, split='train', transforms=train_transforms)
+        train_dataset = CINIC10(
+            root=dataset_dir, split='train', transforms=train_transforms
+        )
 
     elif data_conf.dataset_name == 'imagenet':
-        assert dataset_dir is not None, '`dataset_dir` should not be None, Please input in it.`'
+        assert (
+            dataset_dir is not None
+        ), '`dataset_dir` should not be None, Please input in it.`'
         test_dataset = ImageFolder(os.path.join(dataset_dir, 'val'), test_transforms)
         if only_test:
             return test_dataset
-        train_dataset = ImageFolder(os.path.join(dataset_dir, 'train'), train_transforms)
+        train_dataset = ImageFolder(
+            os.path.join(dataset_dir, 'train'), train_transforms
+        )
 
     else:
         raise NotImplementedError(
@@ -200,7 +208,11 @@ def train_epoch(conf: AttrDict) -> None:
     top1, top5, losses = AvgMeter(), AvgMeter(), AvgMeter()
 
     for batch_idx, (inputs, targets) in enumerate(conf.train_loader):
-        inputs = inputs.to(conf.device, non_blocking=True, memory_format=torch.channels_last if conf.chl_last else None)
+        inputs = inputs.to(
+            conf.device,
+            non_blocking=True,
+            memory_format=torch.channels_last if conf.chl_last else None,
+        )
         targets = targets.to(conf.device, non_blocking=True)
         # https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html
         conf.optimizer.zero_grad(set_to_none=True)
@@ -254,7 +266,11 @@ def train_epoch(conf: AttrDict) -> None:
             losses.all_reduce()
 
         # If `conf.rank == 0`, allows only every `conf.log_freq` or on the last iterations.
-        if (batch_idx + 1) % conf.log_freq == 0 or batch_idx == train_len - 1 and conf.rank == 0:
+        if (
+            (batch_idx + 1) % conf.log_freq == 0
+            or batch_idx == train_len - 1
+            and conf.rank == 0
+        ):
             first_param = conf.optimizer.param_groups[0]
             cur_lr = first_param['lr']
             msg = (
@@ -275,7 +291,11 @@ def train_epoch(conf: AttrDict) -> None:
             conf.warmup_scheduler.step()
 
     # If `conf.scheduler` is not None, start only when `conf.warmup_scheduler` is done or None.
-    if conf.warmup_scheduler is None or conf.warmup_scheduler.done and (conf.scheduler is not None):
+    if (
+        conf.warmup_scheduler is None
+        or conf.warmup_scheduler.done
+        and (conf.scheduler is not None)
+    ):
         conf.scheduler.step()
 
 
@@ -286,7 +306,11 @@ def test_epoch(conf: AttrDict) -> None:
     top1, top5, losses = AvgMeter(), AvgMeter(), AvgMeter()
 
     for batch_idx, (inputs, targets) in enumerate(conf.test_loader):
-        inputs = inputs.to(conf.device, non_blocking=True, memory_format=torch.channels_last if conf.chl_last else None)
+        inputs = inputs.to(
+            conf.device,
+            non_blocking=True,
+            memory_format=torch.channels_last if conf.chl_last else None,
+        )
         targets = targets.to(conf.device, non_blocking=True)
         outputs = conf.model(inputs)
         loss = conf.test_criterion(outputs, targets)
@@ -302,7 +326,11 @@ def test_epoch(conf: AttrDict) -> None:
             top5.all_reduce()
             losses.all_reduce()
 
-        if (batch_idx + 1) % conf.log_freq == 0 or batch_idx == test_len - 1 and conf.rank == 0:
+        if (
+            (batch_idx + 1) % conf.log_freq == 0
+            or batch_idx == test_len - 1
+            and conf.rank == 0
+        ):
             msg = (
                 f'Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
                 f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
@@ -340,7 +368,9 @@ def test_epoch(conf: AttrDict) -> None:
 
                     save_model_dir = os.path.join(conf.exp_dir, 'best.pt')
                     torch.save(state, save_model_dir)
-                    logger.info(f'Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}')
+                    logger.info(
+                        f'Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}'
+                    )
                     conf.best_acc = best_acc
 
     if conf.eval:

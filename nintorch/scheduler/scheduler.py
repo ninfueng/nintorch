@@ -30,7 +30,9 @@ class WarmupLR(LRScheduler):
     >>> True
     """
 
-    def __init__(self, optimizer: Optimizer, max_iterations: int, max_lr: Optional[float] = None) -> None:
+    def __init__(
+        self, optimizer: Optimizer, max_iterations: int, max_lr: Optional[float] = None
+    ) -> None:
         self.max_lr = max_lr if max_lr is not None else optimizer.param_groups[0]['lr']
         self.max_iterations = max_iterations
         self.done = False
@@ -67,7 +69,9 @@ def insert_warmup(
     warmup_scheduler = WarmupLR(optimizer, max_iterations, max_lr)
     schedulers = [warmup_scheduler] + schedulers
 
-    scheduler_lr_with_warmup = SequentialLR(optimizer, schedulers=schedulers, milestones=milestones)
+    scheduler_lr_with_warmup = SequentialLR(
+        optimizer, schedulers=schedulers, milestones=milestones
+    )
     return scheduler_lr_with_warmup
 
 

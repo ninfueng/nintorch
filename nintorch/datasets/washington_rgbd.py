@@ -140,7 +140,9 @@ if __name__ == '__main__':
         test_d,
         train_label,
         test_label,
-    ) = get_train_test_images_labels('~/datasets/rgbd-dataset', test_size=0.3, random_state=0)
+    ) = get_train_test_images_labels(
+        '~/datasets/rgbd-dataset', test_size=0.3, random_state=0
+    )
 
     transforms = A.Compose(
         [

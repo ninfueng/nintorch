@@ -59,4 +59,6 @@ def set_benchmark(verbose: bool = False) -> None:
     else:
         torch.backends.cudnn.benchmark = False
         if verbose:
-            logger.info('Detect `DETERMINISTIC`, set `torch.backends.cudnn.benchmark` to False.')
+            logger.info(
+                'Detect `DETERMINISTIC`, set `torch.backends.cudnn.benchmark` to False.'
+            )

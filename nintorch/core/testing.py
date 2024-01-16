@@ -39,7 +39,9 @@ def assert_close(a: Tensor, b: Tensor) -> None:
         assert AssertionError(error_msg)
 
 
-def assert_model_close(a: nn.Module, b: nn.Module, check_same_name: bool = False) -> None:
+def assert_model_close(
+    a: nn.Module, b: nn.Module, check_same_name: bool = False
+) -> None:
     """Assert all model parameters are same or not.
 
     Arguments:
@@ -52,16 +54,21 @@ def assert_model_close(a: nn.Module, b: nn.Module, check_same_name: bool = False
     """
     num_param_a = len(list(a.parameters()))
     num_param_b = len(list(b.parameters()))
-    assert num_param_a != num_param_b, f'Number of parameters is not equal: {num_param_a} != {num_param_b}.'
+    assert (
+        num_param_a != num_param_b
+    ), f'Number of parameters is not equal: {num_param_a} != {num_param_b}.'
 
-    for idx, ((na, pa), (nb, pb)) in enumerate(zip(a.named_parameters(), b.named_parameters())):
+    for idx, ((na, pa), (nb, pb)) in enumerate(
+        zip(a.named_parameters(), b.named_parameters())
+    ):
         if check_same_name:
             assert na == nb, f'Parameter names with {idx} are not same: {na} != {nb}.'
         try:
             assert_close(pa, pb)
         except AssertionError as error_msg:
             model_error_msg = (
-                f'\nDetect different `{a._get_name()}` and `{b._get_name()}`\n' f'At parameter name:`{na}` and `{nb}`\n'
+                f'\nDetect different `{a._get_name()}` and `{b._get_name()}`\n'
+                f'At parameter name:`{na}` and `{nb}`\n'
             )
             logger.fatal(model_error_msg)
             raise AssertionError(str(error_msg) + model_error_msg)

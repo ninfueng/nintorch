@@ -50,7 +50,14 @@ from torch.utils.data.distributed import DistributedSampler
 from nintorch.models import construct_model_cifar
 from nintorch.scheduler import WarmupLR
 from nintorch.utils.perform import disable_debug, enable_tf32, seed_torch, set_benchmark
-from utils import get_data_conf, get_datasets, get_transforms, load_model_optim_sche, test_epoch, train_epoch
+from utils import (
+    get_data_conf,
+    get_datasets,
+    get_transforms,
+    load_model_optim_sche,
+    test_epoch,
+    train_epoch,
+)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='classification scripts')
@@ -154,14 +161,19 @@ if __name__ == '__main__':
     if rank == 0:
         if args.wandb:
             wandb.login()
-            wandb.init(project=args.project_name, config=vars(args), allow_val_change=True)
+            wandb.init(
+                project=args.project_name, config=vars(args), allow_val_change=True
+            )
             wandb.run.name = args.run_name
 
         exp_dir = args.exp_dir
         if exp_dir is None:
             exp_dir = os.path.join(
                 'exps',
-                str(datetime.datetime.now()).replace(':', '-').replace('.', '-').replace(' ', '-'),
+                str(datetime.datetime.now())
+                .replace(':', '-')
+                .replace('.', '-')
+                .replace(' ', '-'),
             )
         os.makedirs(exp_dir, exist_ok=True)
         set_logger(os.path.join(exp_dir, 'info.log'), stdout=True)
@@ -184,7 +196,9 @@ if __name__ == '__main__':
 
     data_conf = get_data_conf(args.dataset)
     train_transforms, test_transforms = get_transforms(args, data_conf)
-    train_dataset, test_dataset = get_datasets(data_conf, train_transforms, test_transforms, args.dataset_dir)
+    train_dataset, test_dataset = get_datasets(
+        data_conf, train_transforms, test_transforms, args.dataset_dir
+    )
     log_rank_zero(train_transforms)
     log_rank_zero(test_transforms)
 
@@ -205,7 +219,9 @@ if __name__ == '__main__':
         log_rank_zero('Not using `mixup` data augmentation.')
 
     if args.subset_idx_load_dir is not None:
-        log_rank_zero(f'Detect `args.subset_idx_load_dir is not None`. Use subset of training dataset.')
+        log_rank_zero(
+            f'Detect `args.subset_idx_load_dir is not None`. Use subset of training dataset.'
+        )
         subset_idx = torch.load(args.subset_idx_load_dir)
         train_dataset = Subset(train_dataset, subset_idx)
         log_rank_zero(f'Using subset with training data shape: `{subset_idx.shape}`.')
@@ -243,13 +259,23 @@ if __name__ == '__main__':
         or data_conf.dataset_name == 'cifar100'
         or data_conf.dataset_name == 'cinic10'
     ):
-        model = construct_model_cifar(args.model_name, num_classes=data_conf.num_classes)
+        model = construct_model_cifar(
+            args.model_name, num_classes=data_conf.num_classes
+        )
         log_rank_zero(f'Construct a `{args.model_name}` model for CIFAR-like dataset.')
     else:
-        model = getattr(torchvision.models, args.model_name)(pretrained=False, num_classes=data_conf.num_classes)
-        log_rank_zero(f'Construct a `{args.model_name}` model from `torchvision.models`')
+        model = getattr(torchvision.models, args.model_name)(
+            pretrained=False, num_classes=data_conf.num_classes
+        )
+        log_rank_zero(
+            f'Construct a `{args.model_name}` model from `torchvision.models`'
+        )
 
-    model = model.to(device, non_blocking=True, memory_format=torch.channels_last if args.chl_last else None)
+    model = model.to(
+        device,
+        non_blocking=True,
+        memory_format=torch.channels_last if args.chl_last else None,
+    )
     if args.mixup:
         criterion = SoftTargetCrossEntropy()
         log_rank_zero(
@@ -288,7 +314,9 @@ if __name__ == '__main__':
             max_lr=args.lr,
         )
         args.epoch += args.warmup_epoch
-        log_rank_zero(f'Using warmup learning rate for adamw`{args.warmup_epoch}` epochs.')
+        log_rank_zero(
+            f'Using warmup learning rate for adamw`{args.warmup_epoch}` epochs.'
+        )
     else:
         warmup_scheduler = None
 
@@ -300,7 +328,9 @@ if __name__ == '__main__':
         if args.dist:
             model = nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda(gpu_idx)
             model = DDP(model, device_ids=(gpu_idx,))
-            log_rank_zero('Convert `BatchNorm` to `SyncBatchNorm` and using `torch DistributedDataParallel`.')
+            log_rank_zero(
+                'Convert `BatchNorm` to `SyncBatchNorm` and using `torch DistributedDataParallel`.'
+            )
 
     if not args.dist:
         model = nn.DataParallel(model)
@@ -314,8 +344,12 @@ if __name__ == '__main__':
         _model = model
         if hasattr(model, 'module'):
             _model = model.module
-        acc, start_epoch = load_model_optim_sche(args.load_dir, _model, optimizer, scheduler)
-        log_rank_zero(f'Load a model with Acc: {acc}, Epoch: {start_epoch} from `{args.load_dir}`.')
+        acc, start_epoch = load_model_optim_sche(
+            args.load_dir, _model, optimizer, scheduler
+        )
+        log_rank_zero(
+            f'Load a model with Acc: {acc}, Epoch: {start_epoch} from `{args.load_dir}`.'
+        )
 
     conf = AttrDict(
         device=gpu_idx if args.dist else device,

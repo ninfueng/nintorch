@@ -63,7 +63,9 @@ def convert_timm_conf_albu(model: nn.Module, is_train: bool = False) -> A.Compos
 
 
 if __name__ == "__main__":
-    model = timm.create_model("convnext_base.clip_laion2b_augreg_ft_in12k_in1k_384", False)
+    model = timm.create_model(
+        "convnext_base.clip_laion2b_augreg_ft_in12k_in1k_384", False
+    )
     # model = timm.create_model("resnet152.a1h_in1k", False)
     # model = timm.create_model("vit_base_patch16_224.augreg_in21k", False)
     # model = timm.create_model("swin_base_patch4_window7_224.ms_in22k_ft_in1k", False)

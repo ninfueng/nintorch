@@ -86,7 +86,9 @@ class Suggestion:
         return args
 
 
-def run_script(trial: Trial, cmd: str, suggestions: List[Suggestion], timeout: Optional[int] = None) -> Optional[float]:
+def run_script(
+    trial: Trial, cmd: str, suggestions: List[Suggestion], timeout: Optional[int] = None
+) -> Optional[float]:
     """
     Args:
         trial (Trial): Optuna Trial objects to give suggested hyper-parameters

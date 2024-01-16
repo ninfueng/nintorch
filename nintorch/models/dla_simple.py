@@ -18,9 +18,13 @@ class BasicBlock(nn.Module):
 
     def __init__(self, in_planes, planes, stride=1):
         super().__init__()
-        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(
+            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
+        )
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            planes, planes, kernel_size=3, stride=1, padding=1, bias=False
+        )
         self.bn2 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
@@ -71,8 +75,12 @@ class Tree(nn.Module):
             self.left_tree = block(in_channels, out_channels, stride=stride)
             self.right_tree = block(out_channels, out_channels, stride=1)
         else:
-            self.left_tree = Tree(block, in_channels, out_channels, level=level - 1, stride=stride)
-            self.right_tree = Tree(block, out_channels, out_channels, level=level - 1, stride=1)
+            self.left_tree = Tree(
+                block, in_channels, out_channels, level=level - 1, stride=stride
+            )
+            self.right_tree = Tree(
+                block, out_channels, out_channels, level=level - 1, stride=1
+            )
 
     def forward(self, x):
         out1 = self.left_tree(x)

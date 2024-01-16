@@ -26,7 +26,9 @@ class VotingEnsemble(nn.Module):
         elif self.mode == 'hard':
             output = self._forward_vote(input)
         else:
-            raise ValueError(f'Support `mode` only `soft` or `hard`, Your: {self.mode}.')
+            raise ValueError(
+                f'Support `mode` only `soft` or `hard`, Your: {self.mode}.'
+            )
         return output
 
     @torch.inference_mode()

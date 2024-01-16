@@ -7,7 +7,14 @@ from nincore.utils import AvgMeter
 from torch import Tensor, nn
 from torch.nn.utils import prune
 
-__all__ = ['count_params', 'count_macs', 'count_size', 'count_sparse', 'count_sparse_module', 'count_latency']
+__all__ = [
+    'count_params',
+    'count_macs',
+    'count_size',
+    'count_sparse',
+    'count_sparse_module',
+    'count_latency',
+]
 
 
 @torch.no_grad()
@@ -102,7 +109,10 @@ def count_macs(
     try:
         from torchprofile import profile_macs
     except ImportError:
-        raise ImportError('`count_macs` requires `torchprofile`.' 'Please install via `pip install torchprofile`.')
+        raise ImportError(
+            '`count_macs` requires `torchprofile`.'
+            'Please install via `pip install torchprofile`.'
+        )
 
     model = model.to(device)
     input = torch.empty(input_size, device=device)
@@ -155,7 +165,9 @@ def count_sparse_module(
 
 
 @torch.no_grad()
-def count_latency(model: nn.Module, dummy_input: Tensor, n_warmup: int = 20, n_test: int = 100) -> float:
+def count_latency(
+    model: nn.Module, dummy_input: Tensor, n_warmup: int = 20, n_test: int = 100
+) -> float:
     model.eval()
     for _ in range(n_warmup):
         _ = model(dummy_input)

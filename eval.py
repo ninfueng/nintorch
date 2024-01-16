@@ -70,10 +70,14 @@ if __name__ == '__main__':
         or data_conf.dataset_name == 'cifar100'
         or data_conf.dataset_name == 'cinic10'
     ):
-        model = construct_model_cifar(args.model_name, num_classes=data_conf.num_classes)
+        model = construct_model_cifar(
+            args.model_name, num_classes=data_conf.num_classes
+        )
         print(f'Construct a `{args.model_name}` model for CIFAR-like dataset.')
     else:
-        model = getattr(torchvision.models, args.model_name)(pretrained=False, num_classes=data_conf.num_classes)
+        model = getattr(torchvision.models, args.model_name)(
+            pretrained=False, num_classes=data_conf.num_classes
+        )
         print(f'Construct a `{args.model_name}` model from `torchvision.models`')
 
     model = model.to(device)
@@ -86,18 +90,24 @@ if __name__ == '__main__':
         model_state_dict = state_dict['model_state_dict']
     else:
         if args.exp_dir is None:
-            raise ValueError('Both `args.load_dir` and `args.exp_dir` are None. Please specify one of them.')
+            raise ValueError(
+                'Both `args.load_dir` and `args.exp_dir` are None. Please specify one of them.'
+            )
         try:
             exp_dir = os.path.expanduser(args.exp_dir)
         except FileNotFoundError:
-            raise FileNotFoundError(f'No file in `args.exp_dir`, Your: `{args.exp_dir}`.')
+            raise FileNotFoundError(
+                f'No file in `args.exp_dir`, Your: `{args.exp_dir}`.'
+            )
         exp_dirs = os.listdir(exp_dir)
         exp_dirs.sort()
 
         last_exp_dir = os.path.join(exp_dir, exp_dirs[-1], 'best.pt')
         state_dict = torch.load(last_exp_dir)
         model_state_dict = state_dict['model_state_dict']
-        print(f'Detect `args.load_dir` is None, load the latest version from: `{last_exp_dir}`')
+        print(
+            f'Detect `args.load_dir` is None, load the latest version from: `{last_exp_dir}`'
+        )
 
     model.load_state_dict(model_state_dict, strict=False)
     model = model.to(device)

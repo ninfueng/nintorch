@@ -25,7 +25,9 @@ except ImportError:
 
 
 @script
-def spatial_pyramid_pool2d(input: Tensor, bins: Union[int, List[int]], mode: str = 'max') -> Tensor:
+def spatial_pyramid_pool2d(
+    input: Tensor, bins: Union[int, List[int]], mode: str = 'max'
+) -> Tensor:
     """Spatial Pyramid Pooling: https://arxiv.org/pdf/1406.4729.pdf
 
     Args:
@@ -46,12 +48,17 @@ def spatial_pyramid_pool2d(input: Tensor, bins: Union[int, List[int]], mode: str
         h_kernel, w_kernel = math.ceil(h / b), math.ceil(w / b)
         h_stride, w_stride = math.floor(h / b), math.floor(w / b)
         if mode == 'max':
-            output = F.max_pool2d(input, kernel_size=(h_kernel, w_kernel), stride=(h_stride, w_stride))
+            output = F.max_pool2d(
+                input, kernel_size=(h_kernel, w_kernel), stride=(h_stride, w_stride)
+            )
         elif mode == 'avg' or mode == 'average' or mode == 'mean':
-            output = F.avg_pool2d(input, kernel_size=(h_kernel, w_kernel), stride=(h_stride, w_stride))
+            output = F.avg_pool2d(
+                input, kernel_size=(h_kernel, w_kernel), stride=(h_stride, w_stride)
+            )
         else:
             raise NotImplementedError(
-                '`mode` only accepts `max`, `avg`, `average` and `mean` only. ' f'Your `mode`: {mode}'
+                '`mode` only accepts `max`, `avg`, `average` and `mean` only. '
+                f'Your `mode`: {mode}'
             )
         output = output.flatten(start_dim=1)
         outputs.append(output)

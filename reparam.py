@@ -45,10 +45,28 @@ class ReparamConv2d(nn.Conv2d):
         padding_mode: str = 'zeros',
         reparam_fn: Callable[..., Callable] = F.tanh,
     ) -> None:
-        super().__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode)
+        super().__init__(
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            padding,
+            dilation,
+            groups,
+            bias,
+            padding_mode,
+        )
         self.reparam_fn = reparam_fn
 
     def forward(self, input):
         weight = self.reparam_fn(self.weight)
-        output = F.conv2d(input, weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
+        output = F.conv2d(
+            input,
+            weight,
+            self.bias,
+            self.stride,
+            self.padding,
+            self.dilation,
+            self.groups,
+        )
         return output

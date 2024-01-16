@@ -56,7 +56,9 @@ __all__ = [
 ]
 
 
-def construct_model_cifar(model_name: str, num_classes: Optional[int] = None, *args: Any, **kwargs: Any) -> nn.Module:
+def construct_model_cifar(
+    model_name: str, num_classes: Optional[int] = None, *args: Any, **kwargs: Any
+) -> nn.Module:
     """Construct model given model name.
 
     Arguments:
@@ -137,7 +139,9 @@ def construct_model_cifar(model_name: str, num_classes: Optional[int] = None, *a
     elif model_name == 'senet18':
         model = SENet18(*args, **kwargs)
     else:
-        raise NotImplementedError(f'Your models `{model_name.lower(*args, **kwargs)}` does not supported.')
+        raise NotImplementedError(
+            f'Your models `{model_name.lower(*args, **kwargs)}` does not supported.'
+        )
 
     if num_classes is not None:
         try:
