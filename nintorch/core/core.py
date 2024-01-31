@@ -13,17 +13,20 @@ __all__ = [
 ]
 
 
+@torch.inference_mode()
 def print_stat(a: Tensor) -> None:
     """Print `Tensor` with statistical information.
 
     Arguments:
         a: a tensor to print statistical information with.
     """
+    numel = a.numel()
     print(
-        f'shape: {a.shape}, numel: {a.numel()}\n'
-        f'range: [{a.amin():.6f}, {a.amax():.6f}]\n'
-        f'μ: {a.mean():.6f}, σ: {a.std():.6f}\n'
-        f'#inf: {a.isinf().sum()}, #nonzeros: {a.nonzero()}\n'
+        f'Shape: {tuple(a.shape)}\n'
+        f'[{a.amin().item():.6f}, {a.amax().item():.6f}]\n'
+        f'{a.mean().item():.6f} ± {a.std().item():.6f}\n'
+        f'#Inf: {a.isinf().sum()}, #NaN: {a.isnan().sum()}\n'
+        f'#Numel: {numel}, #Zero: {numel - a.count_nonzero().item()}\n'
     )
 
 
@@ -81,3 +84,8 @@ def torch_choice(
     choice = choice[idx]
     choice = choice.reshape(shape)
     return choice
+
+
+if __name__ == '__main__':
+    input = torch.rand(1, 2, 3, 4)
+    print_stat(input)
