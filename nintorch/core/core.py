@@ -1,11 +1,16 @@
+from typing import List, Optional, Tuple
+from functools import reduce
+
 import numpy as np
 import torch
 from torch import Tensor
+
 
 __all__ = [
     'print_stat',
     'torch_np',
     'np_torch',
+    'torch_choice',
 ]
 
 
@@ -14,13 +19,9 @@ def print_stat(a: Tensor) -> None:
 
     Arguments:
         a: a tensor to print statistical information with.
-
-    Returns:
-        None
     """
     print(
-        f'shape: {a.shape}\n'
-        f'numel: {a.numel()}\n'
+        f'shape: {a.shape}, numel: {a.numel()}\n'
         f'range: [{a.amin():.6f}, {a.amax():.6f}]\n'
         f'μ: {a.mean():.6f}, σ: {a.std():.6f}\n'
         f'#inf: {a.isinf().sum()}, #nonzeros: {a.nonzero()}\n'
@@ -56,3 +57,28 @@ def np_torch(x: np.ndarray) -> Tensor:
     else:
         raise ValueError(f'Not supporting with shape of {len(shape)}.')
     return x
+
+
+def torch_choice(
+    choice: List[int],
+    shape: Tuple[int, ...],
+    p: Optional[float] = None,
+    device: torch.device = torch.device('cpu'),
+) -> Tensor:
+    """
+    >>> choice = torch.tensor([1, 2, 3])
+    >>> shape = (3, 4)
+    >>> p = [0.3_333, 0.3_333, 0.3_333]
+    >>> device = torch.device('cpu')
+    >>> choice = torch_choice(choice, shape, p, device)
+    """
+    choice = torch.as_tensor(choice, device=device)
+    if p is None:
+        p = torch.ones_like(choice) / len(choice)
+    else:
+        p = torch.as_tensor(p, device=device)
+    size = reduce(lambda x, y: x * y, shape)
+    idx = p.multinomial(size, replacement=True)
+    choice = choice[idx]
+    choice = choice.reshape(shape)
+    return choice
