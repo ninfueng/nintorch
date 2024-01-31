@@ -1,10 +1,9 @@
-from typing import List, Optional, Tuple
 from functools import reduce
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
 from torch import Tensor
-
 
 __all__ = [
     'print_stat',
