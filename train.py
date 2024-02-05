@@ -37,7 +37,7 @@ import wandb
 from nincore import AttrDict
 from nincore.io import load_yaml
 from nincore.time import second_to_ddhhmmss
-from nincore.utils import backup_scripts, filter_warn, set_logger
+from nincore.utils import backup_scripts, fil_warn, set_logger
 from timm.data import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.optim.optim_factory import create_optimizer_v2
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     args = AttrDict(vars(args))
 
     log_rank_zero = lambda info: logging.info(info) if rank == 0 else None
-    filter_warn()
+    fil_warn()
     start = time.perf_counter()
 
     yaml_log = ''
