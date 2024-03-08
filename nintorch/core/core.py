@@ -15,18 +15,31 @@ __all__ = [
 
 @torch.inference_mode()
 def print_stat(a: Tensor) -> None:
-    """Print `Tensor` with statistical information.
+    """Print `Tensor` with statistical information:
+
+    - Shape
+    - Range
+    - Mean ± Std
+    - #Numel
+    - #Inf
+    - #NaN
+    - #Zero
 
     Arguments:
         a: a tensor to print statistical information with.
     """
     numel = a.numel()
+    n_inf = a.isinf().sum()
+    n_nan = a.isnan().sum()
+    n_zero = numel - a.count_nonzero().item()
     print(
-        f'Shape: {tuple(a.shape)}\n'
-        f'[{a.amin().item():.6f}, {a.amax().item():.6f}]\n'
-        f'{a.mean().item():.6f} ± {a.std().item():.6f}\n'
-        f'#Inf: {a.isinf().sum()}, #NaN: {a.isnan().sum()}\n'
-        f'#Numel: {numel}, #Zero: {numel - a.count_nonzero().item()}\n'
+        f'Shape : {tuple(a.shape)}\n'
+        f'#Numel: {numel:,}\n'
+        f'#Inf  : {n_inf:,} ({n_inf/numel:.6f}%)\n'
+        f'#NaN  : {n_nan:,} ({n_nan/numel:.6f}%)\n'
+        f'#Zero : {n_zero:,} ({n_zero/numel:.6f}%)\n'
+        f'⊆ [{a.amin().item():,.6f}, {a.amax().item():,.6f}]\n'
+        f'{a.mean().item():,.6f} ± {a.std().item():,.6f}'
     )
 
 

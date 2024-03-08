@@ -36,7 +36,7 @@ import torchvision.models
 import wandb
 from nincore import AttrDict
 from nincore.io import load_yaml
-from nincore.time import second_to_ddhhmmss
+from nincore.time import second_ddhhmmss
 from nincore.utils import backup_scripts, fil_warn, set_logger
 from timm.data import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
@@ -387,7 +387,7 @@ if __name__ == '__main__':
     end = time.perf_counter()
 
     if conf.rank == 0:
-        runtime = second_to_ddhhmmss(end - start)
+        runtime = second_ddhhmmss(end - start)
         log_rank_zero(f'Total run-time: {runtime} seconds.')
         conf.runtime = runtime
         conf.to_json(os.path.join(conf.exp_dir, 'settings.json'))
