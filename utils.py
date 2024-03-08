@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 def get_data_conf(dataset_name: str) -> AttrDict:
+    """Get a default configuration for a dataset.
+
+    Args:
+        dataset_name: one of `cifar10`, `cifar100`, `cinic10`, and `imagenet`.
+    """
     dataset_name = dataset_name.lower()
     if dataset_name == 'cifar10':
         data_conf = AttrDict(
@@ -56,7 +61,8 @@ def get_data_conf(dataset_name: str) -> AttrDict:
         )
     else:
         raise NotImplementedError(
-            f'Support only `cifar10`, `cifar100`, `cinic10`, and `imagenet`, Your: `{dataset_name}`'
+            'Support only `cifar10`, `cifar100`, `cinic10`, and `imagenet`, '
+            f'Your: `{dataset_name}`.'
         )
     return data_conf
 
@@ -71,7 +77,8 @@ def get_transforms(
         or data_conf.dataset_name == 'cifar100'
         or data_conf.dataset_name == 'cinic10'
     ):
-        # For `cifar10` size of data, using with `RandomCrop` instead of `RandomResizedCrop`.
+        # For `cifar10` size of data, using with `RandomCrop` instead of
+        # `RandomResizedCrop`.
         test_transforms = T.Compose([T.ToTensor(), normalize])
         use_cifar = True
     elif data_conf.dataset_name == 'imagenet':
@@ -96,9 +103,9 @@ def get_transforms(
         is_training=True,
         color_jitter=conf.color_jitter if conf.color_jitter else None,
         auto_augment=conf.auto_augment_type if conf.auto_augment else None,
-        re_prob=conf.re_prob if conf.random_erasing else 0.0,
+        re_prob=conf.re_prob if conf.rand_erasing else 0.0,
         re_mode=conf.re_mode,
-        re_count=conf.recount,
+        re_count=conf.re_count,
         interpolation=conf.interpolation,
     )
     if use_cifar:
@@ -116,10 +123,12 @@ def get_datasets(
 ) -> Union[Dataset, Tuple[Dataset, Dataset]]:
     if dataset_dir is not None:
         dataset_dir = os.path.expanduser(dataset_dir)
+    else:
+        dataset_dir = './datasets'
 
     if data_conf.dataset_name == 'cifar10':
         test_dataset = CIFAR10(
-            root='./datasets',
+            root=dataset_dir,
             train=False,
             download=True,
             transform=test_transforms,
@@ -127,7 +136,7 @@ def get_datasets(
         if only_test:
             return test_dataset
         train_dataset = CIFAR10(
-            root='./datasets',
+            root=dataset_dir,
             train=True,
             download=True,
             transform=train_transforms,
@@ -135,7 +144,7 @@ def get_datasets(
 
     elif data_conf.dataset_name == 'cifar100':
         test_dataset = CIFAR100(
-            root='./datasets',
+            root=dataset_dir,
             train=False,
             download=True,
             transform=test_transforms,
@@ -143,14 +152,14 @@ def get_datasets(
         if only_test:
             return test_dataset
         train_dataset = CIFAR100(
-            root='./datasets',
+            root=dataset_dir,
             train=True,
             download=True,
             transform=train_transforms,
         )
 
     elif data_conf.dataset_name == 'cinic10':
-        dataset_dir = os.path.join('./datasets', 'cinic10')
+        dataset_dir = os.path.join(dataset_dir, 'cinic10')
         test_dataset = CINIC10(
             root=dataset_dir, split='test', transforms=test_transforms
         )
@@ -161,9 +170,6 @@ def get_datasets(
         )
 
     elif data_conf.dataset_name == 'imagenet':
-        assert (
-            dataset_dir is not None
-        ), '`dataset_dir` should not be None, Please input in it.`'
         test_dataset = ImageFolder(os.path.join(dataset_dir, 'val'), test_transforms)
         if only_test:
             return test_dataset
@@ -373,7 +379,7 @@ def test_epoch(conf: AttrDict) -> None:
                     )
                     conf.best_acc = best_acc
 
-    if conf.eval:
+    if conf.print_eval:
         msg = (
             f'Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
             f'Loss: {losses.avg / (batch_idx + 1):.3e} | '

@@ -120,7 +120,7 @@ if __name__ == '__main__':
         best_acc=0.0,
         log_interval=args.log_interval,
         test_criterion=nn.CrossEntropyLoss(reduction='mean'),
-        eval=True,
+        print_eval=True,
     )
     args.update(conf)
     conf = args

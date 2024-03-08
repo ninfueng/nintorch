@@ -106,7 +106,7 @@ if __name__ == '__main__':
     group = parser.add_argument_group('augment')
     group.add_argument('--auto-augment', action='store_true')
     group.add_argument('--rand-erasing', action='store_true')
-    group.add_argument('--color-jitter', type=float, default=0.4)
+    group.add_argument('--color-jitter', type=float, default=0.0)
     group.add_argument('--auto-augment-type', type=str, default='rand-m9-mstd0.5-inc1')
     group.add_argument('--interpolation', type=str, default='bilinear')
 
@@ -183,7 +183,7 @@ if __name__ == '__main__':
         backup_scripts(['*.py'], os.path.join(exp_dir, 'scripts'))
         cmd = 'python ' + reduce(lambda x, y: f'{x} {y}', sys.argv)
 
-        log_rank_zero(f'Run with the command line: `{cmd}`.')
+        log_rank_zero(f'Command: `{cmd}`.')
     else:
         exp_dir = None
 
@@ -279,19 +279,20 @@ if __name__ == '__main__':
     if args.mixup:
         criterion = SoftTargetCrossEntropy()
         log_rank_zero(
-            f'Detect mixup, using `SoftTargetCrossEntropy` with label smoothing: {args.mixup_label_smoothing}'
+            'Detect mixup, using `SoftTargetCrossEntropy` with label smoothing: '
+            f'{args.mixup_label_smoothing}'
         )
     elif args.label_smoothing and args.mixup_label_smoothing > 0.0:
         criterion = LabelSmoothingCrossEntropy(smoothing=args.mixup_label_smoothing)
         log_rank_zero(
-            'Did not detect `mixup` but `mixup_label_smoothing` > 0.0, '
-            f'using `LabelSmoothingCrossEntropy` with {args.mixup_label_smoothing}.'
+            'Did not detect `mixup` but `mixup_label_smoothing` > 0.0, using '
+            f'`LabelSmoothingCrossEntropy` with {args.mixup_label_smoothing}.'
         )
     else:
         criterion = nn.CrossEntropyLoss()
         log_rank_zero(
-            f'Did not detect `mixup`, `label_smoothing`, or `mixup_label_smoothing` == 0.0, '
-            'using `CrossEntropyLoss`.'
+            'Did not detect `mixup`, `label_smoothing`, or'
+            '`mixup_label_smoothing` == 0.0, using `CrossEntropyLoss`.'
         )
     test_criterion = nn.CrossEntropyLoss()
 
@@ -314,9 +315,7 @@ if __name__ == '__main__':
             max_lr=args.lr,
         )
         args.epoch += args.warmup_epoch
-        log_rank_zero(
-            f'Using warmup learning rate for adamw`{args.warmup_epoch}` epochs.'
-        )
+        log_rank_zero(f'Use a warmup learning rate for `{args.warmup_epoch}` epochs.')
     else:
         warmup_scheduler = None
 
@@ -366,10 +365,11 @@ if __name__ == '__main__':
         mixup_fn=mixup_fn,
         best_acc=0.0,
         grad_accum=args.grad_accum,
-        log_interval=args.log_interval,
+        log_freq=args.log_freq,
         rank=rank,
         dist=args.dist,
         exp_dir=exp_dir,
+        print_eval=False,
     )
     args.update(conf)
     conf = args
