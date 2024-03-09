@@ -86,6 +86,7 @@ if __name__ == '__main__':
     group.add_argument('--subset-idx-load-dir', type=str, default=None)
     group.add_argument('--grad-accum', type=int, default=None)
     group.add_argument('--exp-dir', type=str, default=None)
+    group.add_argument('--save-model', action='store_false')
     group.add_argument('--label-smoothing', action='store_true')
     group.add_argument('--wandb', action='store_true')
     group.add_argument('--half', action='store_true')

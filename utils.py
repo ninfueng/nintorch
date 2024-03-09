@@ -350,33 +350,38 @@ def test_epoch(conf: AttrDict) -> None:
                         {'test_loss': losses.avg, 'test_acc': top1.avg},
                         step=conf.epoch_idx,
                     )
-
                 if top1.avg > conf.best_acc:
-                    # https://github.com/pytorch/pytorch/issues/9176#issuecomment-403570715
-                    try:
-                        model_state_dict = conf.model.module.state_dict()
-                    except AttributeError:
-                        model_state_dict = conf.model.state_dict()
-
                     best_acc = top1.avg
-                    # Cannot use with `AttrDict`. Must use with `dict` to save.
-                    state = AttrDict(
-                        model_state_dict=model_state_dict,
-                        optimizer_state_dict=conf.optimizer.state_dict(),
-                        scheduler_state_dict=conf.scheduler.state_dict(),
-                        accuracy=best_acc,
-                        epoch=conf.epoch_idx,
-                        seed=conf.seed,
-                        rng_state=torch.get_rng_state(),
-                    )
-                    if conf.half:
-                        state.update(scaler_state_dict=conf.scaler.state_dict())
+                    if conf.save_model:
+                        # https://github.com/pytorch/pytorch/issues/9176#issuecomment-403570715
+                        try:
+                            model_state_dict = conf.model.module.state_dict()
+                        except AttributeError:
+                            model_state_dict = conf.model.state_dict()
 
-                    save_model_dir = os.path.join(conf.exp_dir, 'best.pt')
-                    torch.save(state, save_model_dir)
-                    logger.info(
-                        f'Saving a model with Test Acc@{conf.epoch_idx}: {top1.avg:.4f}'
-                    )
+                        # Cannot use with `AttrDict`. Must use with `dict` to save.
+                        state = AttrDict(
+                            model_state_dict=model_state_dict,
+                            optimizer_state_dict=conf.optimizer.state_dict()
+                            if conf.optimizer is not None
+                            else None,
+                            scheduler_state_dict=conf.scheduler.state_dict()
+                            if conf.scheduler is not None
+                            else None,
+                            accuracy=best_acc,
+                            epoch=conf.epoch_idx,
+                            seed=conf.seed,
+                            rng_state=torch.get_rng_state(),
+                        )
+                        if conf.half:
+                            state.update(scaler_state_dict=conf.scaler.state_dict())
+
+                        save_model_dir = os.path.join(conf.exp_dir, 'best.pt')
+                        torch.save(state, save_model_dir)
+                        logger.info(
+                            f'Saving a model with Test Acc@{conf.epoch_idx}: '
+                            f'{top1.avg:.4f}'
+                        )
                     conf.best_acc = best_acc
 
     if conf.print_eval:

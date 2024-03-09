@@ -7,8 +7,8 @@ import torch.nn as nn
 import torchvision.models
 from nincore import AttrDict
 from nincore.io import load_yaml
-from nincore.time import second_to_ddhhmmss
-from nincore.utils import filter_warn
+from nincore.time import second_ddhhmmss
+from nincore.utils import fil_warn
 from torch.utils.data import DataLoader
 
 from nintorch.models import construct_model_cifar
@@ -29,13 +29,17 @@ if __name__ == '__main__':
     group.add_argument('--batch-size', type=int, default=128)
     group.add_argument('--workers', type=int, default=min(os.cpu_count(), 8))
     group.add_argument('--dataset', type=str, default='cifar10')
+    group.add_argument('--seed', type=int, default=None)
     group.add_argument('--compile', action='store_true')
+    group.add_argument('--half', action='store_true')
+    group.add_argument('--chl-last', action='store_true')
+    group.add_argument('--dist', action='store_true')
 
     group = parser.add_argument_group('imagenet')
     group.add_argument('--dataset-dir', type=str, default='~/datasets/imagenet')
     args = parser.parse_args()
     args = AttrDict(vars(args))
-    filter_warn()
+    fil_warn()
 
     start = time.perf_counter()
     yaml_log = ''
@@ -109,6 +113,8 @@ if __name__ == '__main__':
             f'Detect `args.load_dir` is None, load the latest version from: `{last_exp_dir}`'
         )
 
+    # requires `dict` to convert from `AttrDict`.
+    model_state_dict = dict(model_state_dict)
     model.load_state_dict(model_state_dict, strict=False)
     model = model.to(device)
     model = model.eval()
@@ -117,15 +123,21 @@ if __name__ == '__main__':
         device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
         test_loader=test_loader,
         model=model,
-        best_acc=0.0,
-        log_interval=args.log_interval,
+        log_freq=args.log_freq,
         test_criterion=nn.CrossEntropyLoss(reduction='mean'),
+        epoch_idx=9_999,
+        best_acc=0.0,
+        rank=0,
         print_eval=True,
+        wandb=False,
+        optimizer=None,
+        scheduler=None,
+        save_model=False,
     )
     args.update(conf)
     conf = args
     test_epoch(conf)
 
     end = time.perf_counter()
-    runtime = second_to_ddhhmmss(end - start)
+    runtime = second_ddhhmmss(end - start)
     print(f'Total run-time: {runtime} seconds.')
