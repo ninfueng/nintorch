@@ -18,12 +18,12 @@ def print_stat(a: Tensor) -> None:
     """Print `Tensor` with statistical information:
 
     - Shape
-    - Range
-    - Mean ± Std
     - #Numel
     - #Inf
     - #NaN
     - #Zero
+    - Range
+    - Mean ± Std
 
     Arguments:
         a: a tensor to print statistical information with.
@@ -43,6 +43,7 @@ def print_stat(a: Tensor) -> None:
     )
 
 
+@torch.inference_mode()
 def torch_np(x: Tensor) -> np.ndarray:
     """Convert from `Tensor` NCHW to `np.ndarray` NHWC format."""
     assert isinstance(x, Tensor)
@@ -80,7 +81,9 @@ def torch_choice(
     p: Optional[float] = None,
     device: torch.device = torch.device('cpu'),
 ) -> Tensor:
-    """
+    """torch version of `np.random.choice`.
+
+    Example:
     >>> choice = torch.tensor([1, 2, 3])
     >>> shape = (3, 4)
     >>> p = [0.3_333, 0.3_333, 0.3_333]

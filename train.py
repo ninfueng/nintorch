@@ -78,7 +78,7 @@ if __name__ == '__main__':
     group.add_argument('--batch-size', type=int, default=128)
     group.add_argument('--seed', type=int, default=None)
     group.add_argument('--workers', type=int, default=min(os.cpu_count(), 8))
-    group.add_argument('--weight-decay', type=float, default=0.0)
+    group.add_argument('--weight-decay', type=float, default=1e-4)
     group.add_argument('--warmup-epoch', type=int, default=5)
     group.add_argument('--epoch', type=int, default=200)
     group.add_argument('--clip-grad', type=float, default=0.0)
