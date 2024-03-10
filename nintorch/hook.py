@@ -12,6 +12,7 @@ def get_name_from_layer_types(
     model: nn.Module, types: Tuple[nn.Module, ...]
 ) -> List[str]:
     """Get all name of layers that has a type in `types`.
+
     Example:
     >>> model = resnet18(pretrained=True)
     >>> get_name_from_layer_types(model, (nn.Conv2d, ))

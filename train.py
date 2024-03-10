@@ -10,13 +10,13 @@ Example for distributed training:
            --nproc_per_node=2 --env  main.py
 
 Note:
-* One node per computer.
-* One node per a process and multi-processes.
-* One process per a GPU.
-* world_size = num_nodes * num_gpus_per_node
-* global_rank = num_gpus_per_node * node_idx + gpu_idx (or local_rank)
-* batch_per_rank = batch / num_gpus_per_node
-* worker_per_rank = total_worker_per_node / num_gpus_per_node
+- One node per computer.
+- One node per a process and multi-processes.
+- One process per a GPU.
+- world_size = num_nodes * num_gpus_per_node
+- global_rank = num_gpus_per_node * node_idx + gpu_idx (or local_rank)
+- batch_per_rank = batch / num_gpus_per_node
+- worker_per_rank = total_worker_per_node / num_gpus_per_node
 
 All local rank = 0 will save, log, and accumulate all in its node.
 """

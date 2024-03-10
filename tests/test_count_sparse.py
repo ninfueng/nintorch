@@ -6,7 +6,7 @@ from nintorch import count_sparse_module
 
 
 def test_count_sparse():
-    with torch.no_grad():
+    with torch.inference_mode():
         model = nn.Linear(1, 10, bias=False)
         model.weight = nn.Parameter(torch.zeros(1, 10))
         sparse = count_sparse_module(model)
@@ -21,11 +21,11 @@ def test_count_sparse():
 
         model = nn.Linear(1, 10, bias=True)
         model.weight = nn.Parameter(torch.zeros(1, 10))
-        sparse_dict = count_sparse_module(model, count_bias=True, return_layers=True)
+        sparse_dict = count_sparse_module(model, bias=True, return_layers=True)
         torch.testing.assert_close(sparse_dict['weight'], 1.0)
         torch.testing.assert_close(sparse_dict['bias'], 0.0)
 
         model = nn.Linear(1, 10, bias=True)
         prune.l1_unstructured(model, 'weight', 0.5)
-        sparse = count_sparse_module(model, count_bias=True, return_layers=False)
+        sparse = count_sparse_module(model, bias=True, return_layers=False)
         torch.testing.assert_close(sparse, 0.5)

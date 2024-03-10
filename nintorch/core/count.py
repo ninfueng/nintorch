@@ -7,9 +7,20 @@ from nincore.utils import AvgMeter
 from torch import Tensor, nn
 from torch.nn.utils import prune
 
+TORCH_PROFILE = False
+try:
+    from torchprofile import profile_macs
+
+    TORCH_PROFILE = True
+except ImportError:
+    raise ImportError(
+        '`count_macs` requires `torchprofile`.'
+        'Please install via `pip install torchprofile`.'
+    )
+
+
 __all__ = [
     'count_params',
-    'count_macs',
     'count_size',
     'count_sparse',
     'count_sparse_module',
@@ -17,12 +28,12 @@ __all__ = [
 ]
 
 
-@torch.no_grad()
+@torch.inference_mode()
 def count_params(
     model: nn.Module,
-    count_only_requires_grad: bool = False,
-    count_only_nonzero: bool = False,
-    count_bias: bool = True,
+    only_requires_grad: bool = False,
+    only_nonzero: bool = False,
+    bias: bool = True,
     return_layers: bool = False,
 ) -> Union[int, Dict[str, int]]:
     """Return a number of parameters with `require_grad=True` of `nn.Module`.
@@ -31,27 +42,24 @@ def count_params(
 
     Args:
         model: a model to be count
-        count_only_requires_grad: count only parameters with require_grad=True
-        count_only_nonzero: count only nonzero parameters
+        only_requires_grad: count only parameters with require_grad=True
+        only_nonzero: count only nonzero parameters
         return_layers: return a dict with layer by layer parameters.
     """
-    # If `count_only_requires_grad = False`, all parameters counted.
-    # If `count_only_requires_grad = True`, only `required_grad=True` counted.
-    all_params = []
-    all_params_dict = {}
-
+    # If `only_requires_grad = False`, all parameters counted.
+    # If `only_requires_grad = True`, only `required_grad=True` counted.
+    all_params, all_params_dict = [], {}
     for name, param in model.named_parameters():
-        if not count_bias and name.find('bias') > -1:
+        if not bias and name.find('bias') > -1:
             continue
 
-        if not count_only_requires_grad or param.requires_grad:
-            if count_only_nonzero:
+        if not only_requires_grad or param.requires_grad:
+            if only_nonzero:
                 nonzero = param.count_nonzero().detach().numpy()
                 if not return_layers:
                     all_params.append(nonzero)
                 else:
                     all_params_dict.update({name: nonzero})
-
             else:
                 numel = param.numel()
                 if not return_layers:
@@ -66,12 +74,12 @@ def count_params(
         return all_params_dict
 
 
-@torch.no_grad()
+@torch.inference_mode()
 def count_size(
     model: nn.Module,
     bits: int = 32,
-    count_only_requires_grad: bool = False,
-    count_only_nonzero: bool = False,
+    only_requires_grad: bool = False,
+    only_nonzero: bool = False,
 ) -> str:
     """Count model size byte term and return with a suitable unit upto `GB`."""
     Byte = 8
@@ -81,8 +89,8 @@ def count_size(
 
     numel = count_params(
         model,
-        count_only_requires_grad=count_only_requires_grad,
-        count_only_nonzero=count_only_nonzero,
+        only_requires_grad=only_requires_grad,
+        only_nonzero=only_nonzero,
         return_layers=False,
     )
     size = numel * bits
@@ -99,39 +107,19 @@ def count_size(
     return f'{size:4f} {unit}'
 
 
-# While can using with `torchprofile.count_mac` directly, but fn is just for a reminder.
-@torch.no_grad()
-def count_macs(
-    model: nn.Module,
-    input_size: Sequence[int],
-    device: torch.device = torch.device('cuda'),
-) -> int:
-    try:
-        from torchprofile import profile_macs
-    except ImportError:
-        raise ImportError(
-            '`count_macs` requires `torchprofile`.'
-            'Please install via `pip install torchprofile`.'
-        )
-
-    model = model.to(device)
-    input = torch.empty(input_size, device=device)
-    macs = profile_macs(model, input)
-    return macs
-
-
-@torch.no_grad()
+@torch.inference_mode()
 def count_sparse(param: Tensor) -> float:
+    """"""
     numel = param.numel()
     num_zero = numel - param.count_nonzero()
     sparse = num_zero / numel
     return sparse.item()
 
 
-@torch.no_grad()
+@torch.inference_mode()
 def count_sparse_module(
     model: nn.Module,
-    count_bias: bool = True,
+    bias: bool = True,
     return_layers: bool = False,
 ) -> Union[float, Dict[str, float]]:
     """Measure sparsity given `nn.Module`.
@@ -148,7 +136,7 @@ def count_sparse_module(
     all_sparse_dict = {}
     sparses = AvgMeter()
     for name, param in named_paramaters:
-        if not count_bias and name.find('bias') > -1:
+        if not bias and name.find('bias') > -1:
             continue
 
         sparse = count_sparse(param)
@@ -164,10 +152,16 @@ def count_sparse_module(
         return sparses.avg
 
 
-@torch.no_grad()
+@torch.inference_mode()
 def count_latency(
     model: nn.Module, dummy_input: Tensor, n_warmup: int = 20, n_test: int = 100
 ) -> float:
+    """Measure average latency of any `nn.Module` with a given `dummy_input`.
+
+    1. Run a `model` with `n_warmup` rounds first.
+    2. Run a `model` with `n_test` rounds and record the running times.
+    3. Return an average latency.
+    """
     model.eval()
     for _ in range(n_warmup):
         _ = model(dummy_input)
@@ -176,5 +170,20 @@ def count_latency(
     for _ in range(n_test):
         _ = model(dummy_input)
     t2 = time.perf_counter()
-
     return (t2 - t1) / n_test
+
+
+# While can using with `torchprofile.count_mac` directly, but fn is just for a reminder.
+if TORCH_PROFILE:
+    __all__.append('count_macs')
+
+    @torch.inference_mode()
+    def count_macs(
+        model: nn.Module,
+        input_size: Sequence[int],
+        device: torch.device = torch.device('cuda'),
+    ) -> int:
+        model = model.to(device)
+        input = torch.empty(input_size, device=device)
+        macs = profile_macs(model, input)
+        return macs
