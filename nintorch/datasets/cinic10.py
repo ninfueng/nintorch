@@ -2,7 +2,7 @@ import glob
 import os
 import tarfile
 import zipfile
-from typing import Callable, List, Optional, Tuple
+from typing import Callable
 
 import requests
 from PIL import Image
@@ -42,8 +42,8 @@ class CINIC10(Dataset):
         self,
         root: str,
         split: str,
-        transforms: Optional[Callable[..., nn.Module]] = None,
-        target_transforms: Optional[Callable[..., nn.Module]] = None,
+        transforms: Callable[..., nn.Module] | None = None,
+        target_transforms: Callable[..., nn.Module] | None = None,
     ) -> None:
         super().__init__()
         assert split in [
@@ -87,7 +87,7 @@ class CINIC10(Dataset):
         os.remove(zipname)
         os.remove(tarname)
 
-    def get_data_label_dirs(self) -> Tuple[List[str], List[int]]:
+    def get_data_label_dirs(self) -> tuple[list[str], list[int]]:
         """Find a list image directories and a list of their labels."""
         data_dir = os.path.join(self.root, self.split)
 
@@ -101,7 +101,7 @@ class CINIC10(Dataset):
         assert len(data_dirs) == len(labels) == 90_000
         return data_dirs, labels
 
-    def __getitem__(self, idx: int) -> Tuple[Tensor, int]:
+    def __getitem__(self, idx: int) -> tuple[Tensor, int]:
         img, label = self.imgs[idx], self.labels[idx]
 
         if self.transforms is not None:

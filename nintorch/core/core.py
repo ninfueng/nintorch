@@ -1,5 +1,4 @@
 from functools import reduce
-from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -77,9 +76,9 @@ def np_torch(x: np.ndarray) -> Tensor:
 
 
 def torch_choice(
-    choice: List[int],
-    shape: Tuple[int, ...],
-    p: Optional[float] = None,
+    choice: list[int],
+    shape: tuple[int, ...],
+    p: float | None = None,
     device: torch.device = torch.device('cpu'),
 ) -> Tensor:
     """torch version of `np.random.choice`.
@@ -103,7 +102,7 @@ def torch_choice(
     return choice
 
 
-def get_device(device_id: Optional[int] = None) -> torch.device:
+def get_device(device_id: int | None = None) -> torch.device:
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = 'mps' if torch.backends.mps.is_available() else device
     device = f'{device}:{device_id}' if device_id is not None else device

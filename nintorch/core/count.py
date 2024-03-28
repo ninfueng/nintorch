@@ -1,6 +1,6 @@
 import time
 from functools import reduce
-from typing import Dict, Sequence, Union
+from typing import Sequence
 
 import torch
 from nincore.utils import AvgMeter
@@ -35,7 +35,7 @@ def count_params(
     only_nonzero: bool = False,
     bias: bool = True,
     return_layers: bool = False,
-) -> Union[int, Dict[str, int]]:
+) -> int | dict[str, int]:
     """Return a number of parameters with `require_grad=True` of `nn.Module`.
 
     Default = counting all parameters and with both zero and nonzero.
@@ -121,7 +121,7 @@ def count_sparse_module(
     model: nn.Module,
     bias: bool = True,
     return_layers: bool = False,
-) -> Union[float, Dict[str, float]]:
+) -> float | dict[str, float]:
     """Measure sparsity given `nn.Module`.
 
     If able to detect `torch.nn.utils.prune` will looks for `model.named_buffers`

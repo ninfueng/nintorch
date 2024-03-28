@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import albumentations as A
 import numpy as np
 import torchvision.transforms as T
@@ -17,9 +15,9 @@ class Identity(ImageOnlyTransform):
 def get_basic_transforms(
     resize: int = 256,
     crop: int = 224,
-    mean: Tuple[float, float, float] = (0.485, 0.456, 0.406),
-    std: Tuple[float, float, float] = (0.229, 0.224, 0.225),
-) -> Tuple[T.Compose, T.Compose]:
+    mean: tuple[float, float, float] = (0.485, 0.456, 0.406),
+    std: tuple[float, float, float] = (0.229, 0.224, 0.225),
+) -> tuple[T.Compose, T.Compose]:
     normalize = T.Normalize(mean=mean, std=std)
     train_transforms = T.Compose(
         [
@@ -43,9 +41,9 @@ def get_basic_transforms(
 def get_basic_albu_transforms(
     resize: int = 256,
     crop: int = 224,
-    mean: Tuple[float, float, float] = (0.485, 0.456, 0.406),
-    std: Tuple[float, float, float] = (0.229, 0.224, 0.225),
-) -> Tuple[A.Compose, A.Compose]:
+    mean: tuple[float, float, float] = (0.485, 0.456, 0.406),
+    std: tuple[float, float, float] = (0.229, 0.224, 0.225),
+) -> tuple[A.Compose, A.Compose]:
     assert resize > crop, f'`resize` should more than `crop` {crop} > {resize}.'
     normalize = A.Normalize(mean=mean, std=std)
     train_transforms = A.Compose(

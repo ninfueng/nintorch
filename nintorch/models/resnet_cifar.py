@@ -27,7 +27,7 @@ Reference:
 If you use this implementation in you work, please don't forget to mention the
 author, Yerlan Idelbayev.
 """
-from typing import Callable, List
+from typing import Callable
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -111,7 +111,7 @@ class BasicBlock(nn.Module):
 
 class ResNet(nn.Module):
     def __init__(
-        self, block: BasicBlock, num_blocks: List[int], num_classes: int = 10
+        self, block: BasicBlock, num_blocks: list[int], num_classes: int = 10
     ) -> None:
         super().__init__()
         self.in_planes = 16

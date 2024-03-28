@@ -1,6 +1,6 @@
 import glob
 import os
-from typing import Callable, List, Optional, Tuple
+from typing import Callable
 
 import cv2
 import numpy as np
@@ -68,7 +68,7 @@ RGBD_CLASSES = {
 
 def get_train_test_images_labels(
     dataset_dir: str, test_size: float, random_state: int
-) -> Tuple[List[str], List[str], List[str], List[str], List[int], List[int]]:
+) -> tuple[list[str], list[str], list[str], list[str], list[int], list[int]]:
     dataset_dir = os.path.expanduser(dataset_dir)
     folders = glob.glob(os.path.join(dataset_dir, '*'))
     rgbs, ds, labels = [], [], []
@@ -97,10 +97,10 @@ def get_train_test_images_labels(
 class WashingtonRGBDDataset(Dataset):
     def __init__(
         self,
-        rgb_imgs: List[str],
-        d_imgs: List[str],
-        labels: List[int],
-        transforms: Optional[Callable] = None,
+        rgb_imgs: list[str],
+        d_imgs: list[str],
+        labels: list[int],
+        transforms: Callable | None = None,
     ) -> None:
         super().__init__()
         assert len(rgb_imgs) == len(d_imgs)
@@ -109,7 +109,7 @@ class WashingtonRGBDDataset(Dataset):
         self.labels = labels
         self.transforms = transforms
 
-    def __getitem__(self, idx: int) -> Tuple[Tensor, int]:
+    def __getitem__(self, idx: int) -> tuple[Tensor, int]:
         rgb_img = cv2.imread(self.rgb_imgs[idx], cv2.IMREAD_COLOR)
         assert rgb_img is not None, f'Not found RGB image from: {rgb}'
         rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2RGB)
