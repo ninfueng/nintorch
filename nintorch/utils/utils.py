@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Any, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -56,7 +56,7 @@ class AvgMeter:
 
 def time_loader(
     data_loader: DataLoader,
-    num_workers_to_test: Tuple[int, ...] = tuple(range(1, os.cpu_count())),
+    num_workers_to_test: tuple[int, ...] = tuple(range(1, os.cpu_count())),
     num_test_epochs: int = 10,
     device: torch.device = torch.device('cpu'),
     verbose: bool = True,

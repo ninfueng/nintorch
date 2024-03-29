@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable
 
 import torch
 import torch.nn as nn
@@ -9,8 +9,8 @@ __all__ = ['get_name_from_layer_types', 'input_act_hook']
 
 
 def get_name_from_layer_types(
-    model: nn.Module, types: Tuple[nn.Module, ...]
-) -> List[str]:
+    model: nn.Module, types: tuple[nn.Module, ...]
+) -> list[str]:
     """Get all name of layers that has a type in `types`.
 
     Example:
@@ -25,10 +25,10 @@ def get_name_from_layer_types(
 
 
 def input_act_hook(
-    input_dict: Dict[str, List[Tensor]],
-    act_dict: Dict[str, List[Tensor]],
+    input_dict: dict[str, list[Tensor]],
+    act_dict: dict[str, list[Tensor]],
     name: str,
-    only: Optional[str] = None,
+    only: str | None = None,
 ) -> Callable[[nn.Module, Tensor, Tensor], None]:
     """Add hooks to collect input and activation input `input_dict` and `act_dict`.
     https://web.stanford.edu/~nanbhas/blog/forward-hooks-pytorch/

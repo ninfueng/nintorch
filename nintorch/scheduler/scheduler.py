@@ -1,5 +1,3 @@
-from typing import List, Optional, Union
-
 import torch.nn as nn
 import torch.optim as optim
 from nincore import to_1tuple
@@ -31,14 +29,14 @@ class WarmupLR(LRScheduler):
     """
 
     def __init__(
-        self, optimizer: Optimizer, max_iterations: int, max_lr: Optional[float] = None
+        self, optimizer: Optimizer, max_iterations: int, max_lr: float | None = None
     ) -> None:
         self.max_lr = max_lr if max_lr is not None else optimizer.param_groups[0]['lr']
         self.max_iterations = max_iterations
         self.done = False
         super().__init__(optimizer)
 
-    def get_lr(self) -> List[float]:
+    def get_lr(self) -> list[float]:
         if self.last_epoch <= self.max_iterations:
             groups = []
             for _ in self.optimizer.param_groups:
@@ -54,8 +52,8 @@ class WarmupLR(LRScheduler):
 def insert_warmup(
     max_iterations: int,
     optimizer: Optimizer,
-    schedulers: Union[LRScheduler, List[LRScheduler]],
-    milestones: List[int],
+    schedulers: LRScheduler | list[LRScheduler],
+    milestones: list[int],
 ) -> LRScheduler:
     """Insert `WarmupLR` and `schedulers` to `SequentialLR`."""
 

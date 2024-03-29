@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Union
+from typing import Callable
 
 import torch.nn as nn
 from torch import Tensor
@@ -42,14 +42,14 @@ class ConvNormAct(nn.Sequential):
         out_channels: int,
         kernel_size: int,
         stride: int = 1,
-        padding: Union[str, int] = 0,
+        padding: str | int = 0,
         dilation: int = 1,
         groups: int = 1,
         bias: bool = False,
         padding_mode: str = 'zeros',
         conv: Callable[..., nn.Module] = nn.Conv2d,
-        norm: Optional[Callable[..., nn.Module]] = nn.BatchNorm2d,
-        act: Optional[Callable[..., nn.Module]] = nn.ReLU,
+        norm: Callable[..., nn.Module] | None = nn.BatchNorm2d,
+        act: Callable[..., nn.Module] | None = nn.ReLU,
         order: str = 'cna',
     ) -> None:
         assert len(order) <= 3, f'Expect len(order) <= 3, Your: {len(order)=}.'
@@ -104,8 +104,8 @@ class LinearNormAct(nn.Sequential):
         out_features: int,
         bias: bool = True,
         linear: Callable[..., nn.Module] = nn.Linear,
-        norm: Optional[Callable[..., nn.Module]] = nn.BatchNorm1d,
-        act: Optional[Callable[..., nn.Module]] = nn.ReLU,
+        norm: Callable[..., nn.Module] | None = nn.BatchNorm1d,
+        act: Callable[..., nn.Module] | None = nn.ReLU,
         order: str = 'lna',
     ) -> None:
         assert len(order) <= 3, f'Expect len(order) <= 3, Your: {len(order)=}.'

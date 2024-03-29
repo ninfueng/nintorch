@@ -9,6 +9,7 @@ __all__ = [
     'torch_np',
     'np_torch',
     'torch_choice',
+    'get_device',
 ]
 
 
@@ -102,6 +103,13 @@ def torch_choice(
     choice = choice[idx]
     choice = choice.reshape(shape)
     return choice
+
+
+def get_device(device_id: int | None = None) -> torch.device:
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'mps' if torch.backends.mps.is_available() else device
+    device = f'{device}:{device_id}' if device_id is not None else device
+    return torch.device(device)
 
 
 if __name__ == '__main__':

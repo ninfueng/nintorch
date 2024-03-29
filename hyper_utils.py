@@ -2,7 +2,7 @@ import logging
 import signal
 import subprocess
 import sys
-from typing import List, Optional, Sequence, Union
+from typing import Sequence
 
 import optuna
 from nincore import gprint, rprint
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 trial_counter = 0
 
 
-def run_cmd(cmd: str, getline: int = -2) -> Optional[float]:
+def run_cmd(cmd: str, getline: int = -2) -> float | None:
     """Run command and receive a stdout `getline` line.
 
     Example:
@@ -52,9 +52,9 @@ class Suggestion:
         self,
         name: str,
         typename: str,
-        amin: Optional[Union[float, int]] = None,
-        amax: Optional[Union[float, int]] = None,
-        choices: Optional[Sequence[Union[None, bool, int, float, str]]] = None,
+        amin: float | int | None = None,
+        amax: float | int | None = None,
+        choices: Sequence[None | bool | int | float | str] | None = None,
     ) -> None:
         assert typename in ('float', 'categorical', 'int', 'uniform', 'log_uniform')
         self.name = name
@@ -81,14 +81,14 @@ class Suggestion:
             )
         return suggest
 
-    def gen_cmd(self, suggest: Union[int, float]) -> str:
+    def gen_cmd(self, suggest: int | float) -> str:
         args = f' --{self.name} {suggest}'
         return args
 
 
 def run_script(
-    trial: Trial, cmd: str, suggestions: List[Suggestion], timeout: Optional[int] = None
-) -> Optional[float]:
+    trial: Trial, cmd: str, suggestions: list[Suggestion], timeout: int | None = None
+) -> float | None:
     """
     Args:
         trial (Trial): Optuna Trial objects to give suggested hyper-parameters

@@ -24,9 +24,7 @@ import argparse
 import datetime
 import logging
 import os
-import sys
 import time
-from functools import reduce
 from pprint import pformat
 
 import torch
@@ -37,13 +35,13 @@ import wandb
 from nincore import AttrDict
 from nincore.io import load_yaml
 from nincore.time import second_ddhhmmss
-from nincore.utils import backup_scripts, fil_warn, set_logger
+from nincore.utils import backup_scripts, fil_warn, get_cmd, set_logger
 from timm.data import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.optim.optim_factory import create_optimizer_v2
 from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 from torch.utils.data import BatchSampler, DataLoader, Subset
 from torch.utils.data.distributed import DistributedSampler
 
@@ -77,15 +75,18 @@ if __name__ == '__main__':
     group.add_argument('--momentum', type=float, default=0.9)
     group.add_argument('--batch-size', type=int, default=128)
     group.add_argument('--seed', type=int, default=None)
-    group.add_argument('--workers', type=int, default=min(os.cpu_count(), 8))
+    group.add_argument('--workers', type=int, default=min(os.cpu_count(), 4))
     group.add_argument('--weight-decay', type=float, default=1e-4)
     group.add_argument('--warmup-epoch', type=int, default=5)
     group.add_argument('--epoch', type=int, default=200)
+    group.add_argument('--step-downs', nargs='+')
+
     group.add_argument('--clip-grad', type=float, default=0.0)
     group.add_argument('--dataset', type=str, default='cifar10')
     group.add_argument('--subset-idx-load-dir', type=str, default=None)
     group.add_argument('--grad-accum', type=int, default=None)
     group.add_argument('--exp-dir', type=str, default=None)
+    group.add_argument('--backup', action='store_true')
     group.add_argument('--save-model', action='store_false')
     group.add_argument('--label-smoothing', action='store_true')
     group.add_argument('--wandb', action='store_true')
@@ -93,6 +94,13 @@ if __name__ == '__main__':
     group.add_argument('--compile', action='store_true')
     group.add_argument('--chl-last', action='store_true')
     group.add_argument('--load-dir', type=str, default=None)
+
+    group = parser.add_argument_group('weight averaging')
+    group.add_argument(
+        '--wa-mode', type=str, default=None, choices=('swa', 'ema', None)
+    )
+    group.add_argument('--wa-start', type=int, default=160)
+    group.add_argument('--wa-lr', type=float, default=0.05)
 
     group = parser.add_argument_group('mixup')
     group.add_argument('--mixup', action='store_true')
@@ -181,9 +189,9 @@ if __name__ == '__main__':
         log_rank_zero(yaml_log)
         log_rank_zero(pformat(args))
 
-        backup_scripts(['*.py'], os.path.join(exp_dir, 'scripts'))
-        cmd = 'python ' + reduce(lambda x, y: f'{x} {y}', sys.argv)
-
+        if args.backup:
+            backup_scripts(['*.py'], os.path.join(exp_dir, 'scripts'))
+        cmd = get_cmd()
         log_rank_zero(f'Command: `{cmd}`.')
     else:
         exp_dir = None
@@ -221,7 +229,7 @@ if __name__ == '__main__':
 
     if args.subset_idx_load_dir is not None:
         log_rank_zero(
-            f'Detect `args.subset_idx_load_dir is not None`. Use subset of training dataset.'
+            'Detect `args.subset_idx_load_dir is not None`. Use subset of training dataset.'
         )
         subset_idx = torch.load(args.subset_idx_load_dir)
         train_dataset = Subset(train_dataset, subset_idx)
@@ -306,7 +314,10 @@ if __name__ == '__main__':
         filter_bias_and_bn=True,
     )
     log_rank_zero(optimizer)
-    scheduler = CosineAnnealingLR(optimizer, T_max=args.epoch)
+    if args.step_downs is None:
+        scheduler = CosineAnnealingLR(optimizer, T_max=args.epoch)
+    else:
+        scheduler = MultiStepLR(optimizer, milestones=args.step_downs, gamma=0.1)
     log_rank_zero(f'Scheduler state-dict: \n {scheduler.state_dict()}')
 
     if args.warmup_epoch > 0:

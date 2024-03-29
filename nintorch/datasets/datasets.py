@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable
 
 import cv2
 import numpy as np
@@ -37,10 +37,10 @@ class PreloadListDataset(Dataset):
 
     def __init__(
         self,
-        img_dirs: List[str],
-        labels: List[Any],
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+        img_dirs: list[str],
+        labels: list[Any],
+        transform: Callable | None = None,
+        target_transform: Callable | None = None,
         loader: Callable[[str], Any] = default_loader,
         albu: bool = False,
         preload: bool = False,
@@ -97,10 +97,10 @@ class PreloadImageFolder(ImageFolder):
     def __init__(
         self,
         root: str,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+        transform: Callable | None = None,
+        target_transform: Callable | None = None,
         loader: Callable[[str], Any] = default_loader,
-        is_valid_file: Optional[Callable[[str], bool]] = None,
+        is_valid_file: Callable[[str], bool] | None = None,
         transform_first: bool = False,
         albu: bool = False,
     ) -> None:

@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Optional, Tuple, Union
 
 import torch
 import torchvision.transforms as T
@@ -69,7 +68,7 @@ def get_data_conf(dataset_name: str) -> AttrDict:
 
 def get_transforms(
     conf: AttrDict, data_conf: AttrDict, only_test: bool = False
-) -> Union[T.Compose, Tuple[T.Compose, T.Compose]]:
+) -> T.Compose | tuple[T.Compose, T.Compose]:
     normalize = T.Normalize(data_conf.mean, data_conf.std)
     use_cifar = False
     if (
@@ -116,11 +115,11 @@ def get_transforms(
 
 def get_datasets(
     data_conf: AttrDict,
-    train_transforms: Optional[T.Compose],
+    train_transforms: T.Compose | None,
     test_transforms: T.Compose,
-    dataset_dir: Optional[str] = None,
+    dataset_dir: str | None = None,
     only_test: bool = False,
-) -> Union[Dataset, Tuple[Dataset, Dataset]]:
+) -> Dataset | tuple[Dataset, Dataset]:
     if dataset_dir is not None:
         dataset_dir = os.path.expanduser(dataset_dir)
     else:
@@ -189,7 +188,7 @@ def load_model_optim_sche(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler._LRScheduler,
-) -> Tuple[float, int]:
+) -> tuple[float, int]:
     """Load a model, optimizer, and scheduler from a .pt with `load_dir` directory."""
 
     load_dir = os.path.expanduser(load_dir)

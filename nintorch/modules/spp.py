@@ -5,7 +5,6 @@ In paper, train an epoch of 224x224 images and switch to an epoch of 180x180 ima
 """
 import logging
 import math
-from typing import List, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -26,13 +25,13 @@ except ImportError:
 
 @script
 def spatial_pyramid_pool2d(
-    input: Tensor, bins: Union[int, List[int]], mode: str = 'max'
+    input: Tensor, bins: int | list[int], mode: str = 'max'
 ) -> Tensor:
     """Spatial Pyramid Pooling: https://arxiv.org/pdf/1406.4729.pdf
 
     Args:
         input (Tensor): an input tensor expected from the convolutional layer.
-        bins (List[int]): a list of integer of preferred size of outputs.
+        bins (list[int]): a list of integer of preferred size of outputs.
         mode (str): how to reduce the spatial space.
 
     Returns:
@@ -68,7 +67,7 @@ def spatial_pyramid_pool2d(
 
 
 class SpatialPyramidPool2d(nn.Module):
-    def __init__(self, bins: Union[int, List[int]], mode: str = 'max') -> None:
+    def __init__(self, bins: int | list[int], mode: str = 'max') -> None:
         super().__init__()
         self.bins = bins
         self.mode = mode
@@ -77,7 +76,7 @@ class SpatialPyramidPool2d(nn.Module):
         return spatial_pyramid_pool2d(input, bins=self.bins, mode=self.mode)
 
 
-def spp_collate_fn(batch: List[Tuple[Tensor, int]]) -> Tuple[List[Tensor], Tensor]:
+def spp_collate_fn(batch: list[tuple[Tensor, int]]) -> tuple[list[Tensor], Tensor]:
     batch_images, batch_labels = [], []
     for images, labels in batch:
         batch_images.append(images)

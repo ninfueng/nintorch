@@ -1,5 +1,5 @@
 # https://github.com/kuangliu/pytorch-cifar
-from typing import Any, Optional
+from typing import Any
 
 from .densenet import *
 from .dla import *
@@ -57,7 +57,7 @@ __all__ = [
 
 
 def construct_model_cifar(
-    model_name: str, num_classes: Optional[int] = None, *args: Any, **kwargs: Any
+    model_name: str, num_classes: int | None = None, *args: Any, **kwargs: Any
 ) -> nn.Module:
     """Construct model given model name.
 

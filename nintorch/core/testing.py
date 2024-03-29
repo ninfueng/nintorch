@@ -25,12 +25,12 @@ def assert_close(a: Tensor, b: Tensor) -> None:
     if diff_indices.numel() > 0:
         diff_numel = diff.sum()
         abs_diff = (a - b).abs().amax()
-        relative_diff = (a / b).abs().amax()
+        rel_diff = (a / b).abs().amax()
 
         error_msg = (
             f'Detect not allclose: {diff_numel} elements.\n'
             f'Max absolute diff: {abs_diff},\n'
-            f'Max relative diff: {relative_diff},\n'
+            f'Max relative diff: {rel_diff},\n'
             f'`a` diff: {a[diff]},\n'
             f'`b` diff: {b[diff]},\n'
             f'diff indices: \n {diff_indices}'

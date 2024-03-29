@@ -1,5 +1,4 @@
 import logging
-from typing import List, Union
 
 import torch.nn as nn
 from nincore import multi_getattr, to_1tuple
@@ -45,7 +44,7 @@ def freeze_norm(model: nn.Module, verbose: bool = False) -> None:
                 logger.info(f'`{n}` is freeze with `freeze_norm`.')
 
 
-def freeze_except(model: nn.Module, except_names: Union[List[str], str]) -> nn.Module:
+def freeze_except(model: nn.Module, except_names: list[str] | str) -> nn.Module:
     except_names = to_1tuple(except_names)
     model.requires_grad_(False)
     for e in except_names:
