@@ -1,5 +1,5 @@
 # Run an interactive session: `sudo docker run -it --rm --gpus all nintorch`
-ARG PYTORCH="2.1.0"
+ARG PYTORCH="2.2.2"
 ARG CUDA="12.1"
 ARG CUDNN="8"
 
