@@ -1,5 +1,4 @@
 from functools import reduce
-from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -14,7 +13,7 @@ __all__ = [
 
 
 @torch.inference_mode()
-def print_stat(a: Tensor) -> None:
+def print_stat(a: Tensor | np.ndarray) -> None:
     """Print `Tensor` with statistical information:
 
     - Shape
@@ -28,6 +27,9 @@ def print_stat(a: Tensor) -> None:
     Arguments:
         a: a tensor to print statistical information with.
     """
+    if isinstance(a, np.ndarray):
+        a = torch.from_numpy(a)
+
     numel = a.numel()
     n_inf = a.isinf().sum()
     n_nan = a.isnan().sum()
@@ -76,9 +78,9 @@ def np_torch(x: np.ndarray) -> Tensor:
 
 
 def torch_choice(
-    choice: List[int],
-    shape: Tuple[int, ...],
-    p: Optional[float] = None,
+    choice: list[int],
+    shape: tuple[int, ...],
+    p: float | None = None,
     device: torch.device = torch.device('cpu'),
 ) -> Tensor:
     """torch version of `np.random.choice`.
