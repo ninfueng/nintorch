@@ -12,17 +12,24 @@ __all__ = [
 
 class Lambda(nn.Module):
     """Lambda module to wrap a function with.
+    This function will be used with `input` during forward propagations.
 
     Arguments:
         fn: a function to apply during forward propagation.
+
+    Examples:
+    >>> from torchvision.models import resnet18
+    >>> model = resnet18()
+    >>> act_fn = lambda *args, **kwargs: WrapFn(fn=tbn_act_quant, *args, **kwargs)
+    >>> convert_layer(model, nn.ReLU, act_fn)
     """
 
-    def __init__(self, fn: Callable[..., Tensor]) -> None:
+    def __init__(self, fn: Callable[..., Tensor], *_, **__) -> None:
         super().__init__()
         self.fn = fn
 
-    def forward(self, x: Tensor) -> Tensor:
-        x = self.fn(x)
+    def forward(self, x: Tensor, *args, **kwargs) -> Tensor:
+        x = self.fn(x, *args, **kwargs)
         return x
 
     def __repr__(self) -> str:
@@ -34,6 +41,13 @@ class ConvNormAct(nn.Sequential):
 
     Allow to access quantization after normalization and activation functions.
     All `conv`, `norm`, and `act` can be disabled via using `None` as input.
+
+    Examples:
+    >>> x = torch.randn(1, 3, 32, 32)
+    >>> conv = ConvNormAct(3, 6, 3)
+    >>> conv = conv.eval()
+    >>> output = conv(x)
+    >>> assert output.shape == (1, 6, 30, 30)
     """
 
     def __init__(
@@ -96,7 +110,15 @@ class ConvNormAct(nn.Sequential):
 
 
 class LinearNormAct(nn.Sequential):
-    """Linear + Normalization + Activation Layers."""
+    """Linear + Normalization + Activation Layers.
+
+    Examples:
+    >>> x = torch.randn(1, 10)
+    >>> linear = LinearNormAct(10, 1)
+    >>> linear = linear.eval()
+    >>> output = linear(x)
+    >>> assert output.shape == (1, 1)
+    """
 
     def __init__(
         self,
