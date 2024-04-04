@@ -3,6 +3,7 @@
 However, since `PyTorch` model accepts only a fixed-size batch Tensor.
 In paper, train an epoch of 224x224 images and switch to an epoch of 180x180 images.
 """
+
 import logging
 import math
 

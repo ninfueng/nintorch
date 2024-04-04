@@ -27,6 +27,7 @@ Reference:
 If you use this implementation in you work, please don't forget to mention the
 author, Yerlan Idelbayev.
 """
+
 from typing import Callable
 
 import torch.nn as nn

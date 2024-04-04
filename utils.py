@@ -361,12 +361,16 @@ def test_epoch(conf: AttrDict) -> None:
                         # Cannot use with `AttrDict`. Must use with `dict` to save.
                         state = AttrDict(
                             model_state_dict=model_state_dict,
-                            optimizer_state_dict=conf.optimizer.state_dict()
-                            if conf.optimizer is not None
-                            else None,
-                            scheduler_state_dict=conf.scheduler.state_dict()
-                            if conf.scheduler is not None
-                            else None,
+                            optimizer_state_dict=(
+                                conf.optimizer.state_dict()
+                                if conf.optimizer is not None
+                                else None
+                            ),
+                            scheduler_state_dict=(
+                                conf.scheduler.state_dict()
+                                if conf.scheduler is not None
+                                else None
+                            ),
                             accuracy=best_acc,
                             epoch=conf.epoch_idx,
                             seed=conf.seed,

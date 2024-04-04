@@ -8,6 +8,7 @@ Works:
 * `F.softsign`
 * `torch.arctan`
 """
+
 from typing import Callable
 
 import torch.nn.functional as F

@@ -20,6 +20,7 @@ Note:
 
 All local rank = 0 will save, log, and accumulate all in its node.
 """
+
 import argparse
 import datetime
 import logging
