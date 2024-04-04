@@ -92,6 +92,17 @@ if __name__ == '__main__':
     group.add_argument('--wandb', action='store_true')
     group.add_argument('--half', action='store_true')
     group.add_argument('--compile', action='store_true')
+    group.add_argument(
+        '--compile-mode',
+        type=str,
+        default='default',
+        choices=(
+            'default',
+            'reduce-overhead',
+            'max-autotune',
+            'max-autotune-no-cudagraphs',
+        ),
+    )
     group.add_argument('--chl-last', action='store_true')
     group.add_argument('--load-dir', type=str, default=None)
 
@@ -348,8 +359,8 @@ if __name__ == '__main__':
         log_rank_zero('Wrap model with `nn.DataParallel`.')
 
     if args.compile:
-        model = torch.compile(model)
-        log_rank_zero(f'Use `torch.compile` with default settings.')
+        model = torch.compile(model, mode=args.compile_mode)
+        log_rank_zero(f'Use `torch.compile` with {args.compile_mode} settings.')
 
     if args.load_dir is not None:
         _model = model
