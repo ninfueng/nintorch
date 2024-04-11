@@ -33,7 +33,7 @@ From: pytorch/pytorch:2.2.2-cuda12.1-cudnn8-devel
         torchprofile \
         git+https://github.com/ninfueng/nincore.git@master \
         git+https://github.com/ninfueng/nintorch.git@master
-    wget https://gist.githubusercontent.com/ninfueng/736261c56b094f29704ace23cdace4a4/raw/fb181994fcfe15d598438f7ead454707ed9d7431/.vimrc -P ~
+    wget https://gist.githubusercontent.com/ninfueng/736261c56b094f29704ace23cdace4a4/raw/154fe3f14445193495c9b5ab95508ec950069b8a/.vimrc -P ~
 
 %labels
     Author ninfueng
