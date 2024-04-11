@@ -2,6 +2,7 @@ from functools import reduce
 
 import numpy as np
 import torch
+from nincore.version import is_newer_equal_ver
 from torch import Tensor
 
 __all__ = [
@@ -10,10 +11,15 @@ __all__ = [
     'np_torch',
     'torch_choice',
     'get_device',
+    'infer_mode',
 ]
 
+infer_mode = (
+    torch.inference_mode if is_newer_equal_ver(torch, '1.9.0') else torch.no_grad
+)
 
-@torch.inference_mode()
+
+@infer_mode()
 def print_stat(a: Tensor | np.ndarray) -> None:
     """Print `Tensor` with statistical information:
 
@@ -46,7 +52,7 @@ def print_stat(a: Tensor | np.ndarray) -> None:
     )
 
 
-@torch.inference_mode()
+@infer_mode()
 def torch_np(x: Tensor) -> np.ndarray:
     """Convert from `Tensor` NCHW to `np.ndarray` NHWC format."""
     assert isinstance(x, Tensor)

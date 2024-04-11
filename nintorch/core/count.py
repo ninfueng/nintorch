@@ -7,6 +7,8 @@ from nincore.utils import AvgMeter
 from torch import Tensor, nn
 from torch.nn.utils import prune
 
+from nintorch.core import infer_mode
+
 TORCH_PROFILE = False
 try:
     from torchprofile import profile_macs
@@ -28,7 +30,7 @@ __all__ = [
 ]
 
 
-@torch.inference_mode()
+@infer_mode()
 def count_params(
     model: nn.Module,
     only_requires_grad: bool = False,
@@ -74,7 +76,7 @@ def count_params(
         return all_params_dict
 
 
-@torch.inference_mode()
+@infer_mode()
 def count_size(
     model: nn.Module,
     bits: int = 32,
@@ -107,7 +109,7 @@ def count_size(
     return f'{size:4f} {unit}'
 
 
-@torch.inference_mode()
+@infer_mode()
 def count_sparse(param: Tensor) -> float:
     """"""
     numel = param.numel()
@@ -116,7 +118,7 @@ def count_sparse(param: Tensor) -> float:
     return sparse.item()
 
 
-@torch.inference_mode()
+@infer_mode()
 def count_sparse_module(
     model: nn.Module,
     bias: bool = True,
@@ -152,7 +154,7 @@ def count_sparse_module(
         return sparses.avg
 
 
-@torch.inference_mode()
+@infer_mode()
 def count_latency(
     model: nn.Module, dummy_input: Tensor, n_warmup: int = 20, n_test: int = 100
 ) -> float:
@@ -177,7 +179,7 @@ def count_latency(
 if TORCH_PROFILE:
     __all__.append('count_macs')
 
-    @torch.inference_mode()
+    @infer_mode()
     def count_macs(
         model: nn.Module,
         input_size: Sequence[int],
