@@ -1,4 +1,4 @@
-# Run an interactive session: `sudo docker run -it --rm --gpus all nintorch`
+# Run an interactive session: `docker run -it --rm --gpus all nintorch`
 ARG PYTORCH="2.2.2"
 ARG CUDA="12.1"
 ARG CUDNN="8"
@@ -32,8 +32,7 @@ RUN pip3 install --no-cache \
     torchprofile \
     git+https://github.com/ninfueng/nincore.git@master \
     git+https://github.com/ninfueng/nintorch.git@master
-
-RUN wget https://gist.githubusercontent.com/ninfueng/736261c56b094f29704ace23cdace4a4/raw/fb181994fcfe15d598438f7ead454707ed9d7431/.vimrc -P ~
+RUN wget https://gist.githubusercontent.com/ninfueng/736261c56b094f29704ace23cdace4a4/raw/154fe3f14445193495c9b5ab95508ec950069b8a/.vimrc -P ~
 
 WORKDIR /workspace
 ENTRYPOINT ["/bin/bash"]

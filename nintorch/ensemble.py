@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+from nintorch import infer_mode
+
 __all__ = ['VotingEnsemble']
 
 
@@ -19,7 +21,7 @@ class VotingEnsemble(nn.Module):
         self.models = nn.ModuleList(models)
         self.mode = mode
 
-    @torch.inference_mode()
+    @infer_mode()
     def forward(self, input: Tensor) -> Tensor:
         if self.mode == 'soft':
             output = self._forward_avg(input)
@@ -31,13 +33,13 @@ class VotingEnsemble(nn.Module):
             )
         return output
 
-    @torch.inference_mode()
+    @infer_mode()
     def _forward_avg(self, input: Tensor) -> Tensor:
         preds = [model(input) for model in self.models]
         preds = torch.stack(preds, dim=-1)
         return preds.mean(dim=-1)
 
-    @torch.inference_mode()
+    @infer_mode()
     def _forward_vote(self, input: Tensor) -> Tensor:
         votes = [model(input).argmax(dim=-1) for model in self.models]
         votes = torch.stack(votes, dim=-1)
