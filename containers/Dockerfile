@@ -13,6 +13,7 @@ RUN apt update -y && \
         ninja-build \
         tar \
         zip \
+        unzip \
         git \
         htop \
         vim \
