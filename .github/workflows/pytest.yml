@@ -27,7 +27,7 @@ jobs:
       - name: pip install dependencies
         run: |
           pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip3 install numpy albumentations tqdm scikit-learn PyYAML pytest
+          pip3 install numpy albumentations tqdm scikit-learn PyYAML pytest torchprofile
           pip3 install git+https://github.com/ninfueng/nincore.git@master
           python setup.py install
 

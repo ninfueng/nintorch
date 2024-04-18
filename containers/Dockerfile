@@ -13,6 +13,7 @@ RUN apt update -y && \
         ninja-build \
         tar \
         zip \
+        unzip \
         git \
         htop \
         vim \
@@ -32,7 +33,8 @@ RUN pip3 install --no-cache \
     torchprofile \
     git+https://github.com/ninfueng/nincore.git@master \
     git+https://github.com/ninfueng/nintorch.git@master
-RUN wget https://gist.githubusercontent.com/ninfueng/736261c56b094f29704ace23cdace4a4/raw/154fe3f14445193495c9b5ab95508ec950069b8a/.vimrc -P ~
+RUN wget -P \
+    https://gist.githubusercontent.com/ninfueng/736261c56b094f29704ace23cdace4a4/raw/154fe3f14445193495c9b5ab95508ec950069b8a/.vimrc ~
 
 WORKDIR /workspace
 ENTRYPOINT ["/bin/bash"]
