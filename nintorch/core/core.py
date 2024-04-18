@@ -87,7 +87,7 @@ def np_torch(x: np.ndarray) -> Tensor:
 def torch_choice(
     choice: list[int],
     shape: tuple[int, ...],
-    p: float | None = None,
+    p: list[float] | None = None,
     device: torch.device = torch.device('cpu'),
 ) -> Tensor:
     """torch version of `np.random.choice`.
