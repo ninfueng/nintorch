@@ -258,6 +258,9 @@ def train_epoch(conf: AttrDict) -> None:
             if conf.grad_accum is None or (batch_idx + 1) % conf.grad_accum == 0:
                 conf.optimizer.step()
 
+        if conf.model_ema is not None:
+            conf.model_ema.update(conf.model)
+
         with torch.inference_mode():
             acc1, acc5 = accuracy(outputs, targets, (1, 5))
             batch_size = targets.size(0)
@@ -317,7 +320,10 @@ def test_epoch(conf: AttrDict) -> None:
             memory_format=torch.channels_last if conf.chl_last else None,
         )
         targets = targets.to(conf.device, non_blocking=True)
-        outputs = conf.model(inputs)
+        if conf.model_ema is None:
+            outputs = conf.model(inputs)
+        else:
+            outputs = conf.model_ema.module(inputs)
         loss = conf.test_criterion(outputs, targets)
 
         acc1, acc5 = accuracy(outputs, targets, (1, 5))
@@ -357,10 +363,15 @@ def test_epoch(conf: AttrDict) -> None:
                             model_state_dict = conf.model.module.state_dict()
                         except AttributeError:
                             model_state_dict = conf.model.state_dict()
+                        model_ema_state_dict = None
+
+                        if conf.model_ema is not None:
+                            model_ema_state_dict = conf.model_ema.module.state_dict()
 
                         # Cannot use with `AttrDict`. Must use with `dict` to save.
                         state = AttrDict(
                             model_state_dict=model_state_dict,
+                            model_ema_state_dict=model_ema_state_dict,
                             optimizer_state_dict=(
                                 conf.optimizer.state_dict()
                                 if conf.optimizer is not None

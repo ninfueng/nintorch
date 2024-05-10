@@ -40,6 +40,7 @@ from nincore.utils import backup_scripts, fil_warn, get_cmd, set_logger
 from timm.data import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.optim.optim_factory import create_optimizer_v2
+from timm.utils import ModelEmaV3
 from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
@@ -81,6 +82,8 @@ if __name__ == '__main__':
     group.add_argument('--warmup-epoch', type=int, default=5)
     group.add_argument('--epoch', type=int, default=200)
     group.add_argument('--step-downs', nargs='+')
+    group.add_argument('--ema', action='store_true')
+    group.add_argument('--ema-decay', type=float, default=0.9999)
 
     group.add_argument('--clip-grad', type=float, default=0.0)
     group.add_argument('--dataset', type=str, default='cifar10')
@@ -297,6 +300,13 @@ if __name__ == '__main__':
         non_blocking=True,
         memory_format=torch.channels_last if args.chl_last else None,
     )
+    model_ema = None
+    if args.ema:
+        model_ema = ModelEmaV3(
+            model,
+            decay=0.9999,
+            device=device,
+        )
     if args.mixup:
         criterion = SoftTargetCrossEntropy()
         log_rank_zero(
@@ -362,6 +372,9 @@ if __name__ == '__main__':
     if args.compile:
         model = torch.compile(model, mode=args.compile_mode)
         log_rank_zero(f'Use `torch.compile` with {args.compile_mode} settings.')
+        if args.ema:
+            model_ema = torch.compile(model_ema, mode=args.compile_mode)
+            log_rank_zero(f'`torch.compile` with `model_ema`.')
 
     if args.load_dir is not None:
         _model = model
@@ -379,6 +392,7 @@ if __name__ == '__main__':
         train_loader=train_loader,
         test_loader=test_loader,
         model=model,
+        model_ema=model_ema,
         criterion=criterion,
         test_criterion=test_criterion,
         optimizer=optimizer,
@@ -427,3 +441,4 @@ if __name__ == '__main__':
 
     del train_loader
     del test_loader
+    torch.cuda.ipc_collect()
