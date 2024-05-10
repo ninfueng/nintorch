@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
     if args.load_dir is not None:
         load_dir = os.path.expanduser(args.load_dir)
-        state_dict = torch.load(args.load_dir)
+        state_dict = torch.load(args.load_dir, map_location='cpu')
         model_state_dict = state_dict['model_state_dict']
     else:
         if args.exp_dir is None:
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         exp_dirs.sort()
 
         last_exp_dir = os.path.join(exp_dir, exp_dirs[-1], 'best.pt')
-        state_dict = torch.load(last_exp_dir)
+        state_dict = torch.load(last_exp_dir, map_location='cpu')
         model_state_dict = state_dict['model_state_dict']
         print(
             f'Detect `args.load_dir` is None, load the latest version from: `{last_exp_dir}`'
