@@ -34,6 +34,7 @@ if __name__ == '__main__':
     group.add_argument('--half', action='store_true')
     group.add_argument('--chl-last', action='store_true')
     group.add_argument('--dist', action='store_true')
+    group.add_argument('--ema', action='store_true')
 
     group = parser.add_argument_group('imagenet')
     group.add_argument('--dataset-dir', type=str, default='~/datasets/imagenet')
@@ -91,7 +92,11 @@ if __name__ == '__main__':
     if args.load_dir is not None:
         load_dir = os.path.expanduser(args.load_dir)
         state_dict = torch.load(args.load_dir, map_location='cpu')
-        model_state_dict = state_dict['model_state_dict']
+        if args.ema:
+            model_state_dict = state_dict['model_state_dict']
+        else:
+            model_state_dict = state_dict['model_ema_state_dict']
+
     else:
         if args.exp_dir is None:
             raise ValueError(

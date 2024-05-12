@@ -188,13 +188,17 @@ def load_model_optim_sche(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler._LRScheduler,
+    ema: bool = False,
 ) -> tuple[float, int]:
     """Load a model, optimizer, and scheduler from a .pt with `load_dir` directory."""
 
     load_dir = os.path.expanduser(load_dir)
     state_dict = torch.load(load_dir)
 
-    model_state_dict = state_dict['model_state_dict']
+    if ema:
+        model_state_dict = state_dict['model_ema_state_dict']
+    else:
+        model_state_dict = state_dict['model_state_dict']
     optimizer_state_dict = state_dict['optimizer_state_dict']
     scheduler_state_dict = state_dict['scheduler_state_dict']
 

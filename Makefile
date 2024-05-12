@@ -1,6 +1,6 @@
 .PHONY: traincifar10
 traincifar10:
-	python train.py --half --chl-last
+	python train.py --half --chl-last --compile --ema
 
 .PHONY: clean
 clean:

@@ -304,7 +304,7 @@ if __name__ == '__main__':
     if args.ema:
         model_ema = ModelEmaV3(
             model,
-            decay=0.9999,
+            decay=args.ema_decay,
             device=device,
         )
     if args.mixup:
