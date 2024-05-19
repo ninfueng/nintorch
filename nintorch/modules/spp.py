@@ -18,10 +18,10 @@ try:
     from torch.jit import script
 
 except ImportError:
-    from nincore.wrap import wrap_identity
+    from nincore.wrap import wrap_ident
 
     # Money padding if cannot use torch.jit.script then wrapping with identity wrapper.
-    script = wrap_identity
+    script = wrap_ident
 
 
 @script
