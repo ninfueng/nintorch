@@ -286,9 +286,9 @@ def train_epoch(conf: AttrDict) -> None:
             first_param = conf.optimizer.param_groups[0]
             cur_lr = first_param['lr']
             msg = (
-                f'Train Epoch {conf.epoch_idx} ({batch_idx + 1}/{train_len}) | '
-                f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
-                f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+                f'Tr E {conf.epoch_idx} ({batch_idx + 1}/{train_len}) | '
+                f'L: {losses.avg / (batch_idx + 1):.3e} | '
+                f'A: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
                 f'Lr: {cur_lr:.3e} |'
             )
             logging.info(msg)
@@ -347,11 +347,10 @@ def test_epoch(conf: AttrDict) -> None:
             and conf.rank == 0
         ):
             msg = (
-                f'Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
-                f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
-                f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+                f'Te E {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
+                f'L: {losses.avg / (batch_idx + 1):.3e} | '
+                f'A: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
             )
-            logging.info(msg)
 
             if batch_idx == test_len - 1:
                 if conf.wandb:
@@ -396,16 +395,14 @@ def test_epoch(conf: AttrDict) -> None:
 
                         save_model_dir = os.path.join(conf.exp_dir, 'best.pt')
                         torch.save(state, save_model_dir)
-                        logger.info(
-                            f'Saving a model with Test Acc@{conf.epoch_idx}: '
-                            f'{top1.avg:.4f}'
-                        )
+                        msg += 'S'
                     conf.best_acc = best_acc
+            logging.info(msg)
 
     if conf.print_eval:
         msg = (
-            f'Test  Epoch {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
-            f'Loss: {losses.avg / (batch_idx + 1):.3e} | '
-            f'Acc: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+            f'Te E {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
+            f'L: {losses.avg / (batch_idx + 1):.3e} | '
+            f'A: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
         )
         print(msg)

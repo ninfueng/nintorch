@@ -65,3 +65,7 @@ test:
 .PHONY: testall
 testall:
 	pytest ./tests
+
+.PHONY: mypy
+mypy:
+	mypy . --disable-error-code=import-untyped

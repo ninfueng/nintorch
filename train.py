@@ -96,6 +96,7 @@ if __name__ == '__main__':
     group.add_argument('--wandb', action='store_true')
     group.add_argument('--half', action='store_true')
     group.add_argument('--compile', action='store_true')
+    group.add_argument('--multi-gpu', action='store_true')
     group.add_argument(
         '--compile-mode',
         type=str,
@@ -154,7 +155,7 @@ if __name__ == '__main__':
         args = AttrDict(args)
         yaml_log = f'Detect `args.yaml` is not None, use arguments in {args.yaml}'
 
-    if args.dist:
+    if args.multi_gpu and args.dist:
         master_addr = os.environ['MASTER_ADDR']
         master_port = int(os.environ['MASTER_PORT'])
         rank = int(os.environ['RANK'])
@@ -201,8 +202,7 @@ if __name__ == '__main__':
             )
         os.makedirs(exp_dir, exist_ok=True)
         set_logger(os.path.join(exp_dir, 'info.log'), stdout=True)
-        log_rank_zero(yaml_log)
-        log_rank_zero(pformat(args))
+        log_rank_zero(f'{yaml_log}\n{pformat(args)}')
 
         if args.backup:
             backup_scripts(['*.py'], os.path.join(exp_dir, 'scripts'))
@@ -237,20 +237,21 @@ if __name__ == '__main__':
             label_smoothing=args.mixup_label_smoothing if args.label_smoothing else 0.0,
             num_classes=data_conf.num_classes,
         )
-        log_rank_zero('Using `mixup` data augmentation.')
+        log_rank_zero('Uses `mixup` data augmentation.')
     else:
         mixup_fn = None
-        log_rank_zero('Not using `mixup` data augmentation.')
+        log_rank_zero('Do not use `mixup` data augmentation.')
 
     if args.subset_idx_load_dir is not None:
         log_rank_zero(
-            'Detect `args.subset_idx_load_dir is not None`. Use subset of training dataset.'
+            'Detects `args.subset_idx_load_dir is not None`. '
+            'Uses a subset of training dataset.'
         )
         subset_idx = torch.load(args.subset_idx_load_dir)
         train_dataset = Subset(train_dataset, subset_idx)
-        log_rank_zero(f'Using subset with training data shape: `{subset_idx.shape}`.')
+        log_rank_zero(f'Uses subset with training data shape: `{subset_idx.shape}`.')
 
-    if args.dist:
+    if args.multi_gpu and args.dist:
         train_sampler = DistributedSampler(train_dataset, shuffle=True)
         test_sampler = DistributedSampler(test_dataset, shuffle=False)
         train_batch_sampler = BatchSampler(train_sampler, batch_size, drop_last=True)
@@ -286,13 +287,13 @@ if __name__ == '__main__':
         model = construct_model_cifar(
             args.model_name, num_classes=data_conf.num_classes
         )
-        log_rank_zero(f'Construct a `{args.model_name}` model for CIFAR-like dataset.')
+        log_rank_zero(f'Constructs a `{args.model_name}` model for CIFAR-like dataset.')
     else:
         model = getattr(torchvision.models, args.model_name)(
             pretrained=False, num_classes=data_conf.num_classes
         )
         log_rank_zero(
-            f'Construct a `{args.model_name}` model from `torchvision.models`'
+            f'Constructs a `{args.model_name}` model from `torchvision.models`'
         )
 
     model = model.to(
@@ -310,19 +311,19 @@ if __name__ == '__main__':
     if args.mixup:
         criterion = SoftTargetCrossEntropy()
         log_rank_zero(
-            'Detect mixup, using `SoftTargetCrossEntropy` with label smoothing: '
+            'Detects mixup, using `SoftTargetCrossEntropy` with label smoothing: '
             f'{args.mixup_label_smoothing}'
         )
     elif args.label_smoothing and args.mixup_label_smoothing > 0.0:
         criterion = LabelSmoothingCrossEntropy(smoothing=args.mixup_label_smoothing)
         log_rank_zero(
-            'Did not detect `mixup` but `mixup_label_smoothing` > 0.0, using '
+            'Do not detect `mixup` but `mixup_label_smoothing` > 0.0, using '
             f'`LabelSmoothingCrossEntropy` with {args.mixup_label_smoothing}.'
         )
     else:
         criterion = nn.CrossEntropyLoss()
         log_rank_zero(
-            'Did not detect `mixup`, `label_smoothing`, or'
+            'Do not detect `mixup`, `label_smoothing`, or'
             '`mixup_label_smoothing` == 0.0, using `CrossEntropyLoss`.'
         )
     test_criterion = nn.CrossEntropyLoss()
@@ -349,32 +350,34 @@ if __name__ == '__main__':
             max_lr=args.lr,
         )
         args.epoch += args.warmup_epoch
-        log_rank_zero(f'Use a warmup learning rate for `{args.warmup_epoch}` epochs.')
+        log_rank_zero(f'Warms-up LR for `{args.warmup_epoch}` epochs.')
     else:
         warmup_scheduler = None
 
     scaler = opt_level = None
     if args.half:
         scaler = GradScaler()
-        log_rank_zero('Using `torch.cuda.amp` half.')
+        log_rank_zero('Uses `torch.cuda.amp` half.')
 
-        if args.dist:
+        if args.multi_gpu and args.dist:
             model = nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda(gpu_idx)
             model = DDP(model, device_ids=(gpu_idx,))
             log_rank_zero(
-                'Convert `BatchNorm` to `SyncBatchNorm` and using `torch DistributedDataParallel`.'
+                'Converts `BatchNorm` to `SyncBatchNorm` and using `torch DistributedDataParallel`.'
             )
 
-    if not args.dist:
+    # adds `args.multi_gpu` flag to avoid `torch.compile` with `DataParallel`.
+    # May causes slower the run time.
+    if args.multi_gpu and not args.dist:
         model = nn.DataParallel(model)
-        log_rank_zero('Wrap model with `nn.DataParallel`.')
+        log_rank_zero('Wraps a model with `nn.DataParallel`.')
 
     if args.compile:
         model = torch.compile(model, mode=args.compile_mode)
-        log_rank_zero(f'Use `torch.compile` with {args.compile_mode} settings.')
+        log_rank_zero(f'Uses `torch.compile` with {args.compile_mode} settings.')
         if args.ema:
             model_ema = torch.compile(model_ema, mode=args.compile_mode)
-            log_rank_zero(f'`torch.compile` with `model_ema`.')
+            log_rank_zero(f'Uses `torch.compile` with `model_ema`.')
 
     if args.load_dir is not None:
         _model = model
@@ -384,7 +387,7 @@ if __name__ == '__main__':
             args.load_dir, _model, optimizer, scheduler
         )
         log_rank_zero(
-            f'Load a model with Acc: {acc}, Epoch: {start_epoch} from `{args.load_dir}`.'
+            f'Loads a model with Acc: {acc}, Epoch: {start_epoch} from `{args.load_dir}`.'
         )
 
     conf = AttrDict(
@@ -401,11 +404,12 @@ if __name__ == '__main__':
         scaler=scaler,
         opt_level=opt_level,
         mixup_fn=mixup_fn,
-        best_acc=0.0,
+        best_acc=float('-inf'),
         grad_accum=args.grad_accum,
         log_freq=args.log_freq,
         rank=rank,
         dist=args.dist,
+        multi_gpu=args.multi_gpu,
         exp_dir=exp_dir,
         print_eval=False,
     )
@@ -414,7 +418,7 @@ if __name__ == '__main__':
 
     if conf.rank == 0 and conf.wandb and conf.model_log_freq is not None:
         wandb.watch(model, log_freq=conf.model_log_freq)
-        log_rank_zero('Using `wandb` to tracking the model distribution.')
+        log_rank_zero('Uses `wandb` to tracking the model distribution.')
 
     for epoch_idx in range(1, args.epoch + 1):
         conf.epoch_idx = epoch_idx
@@ -426,7 +430,7 @@ if __name__ == '__main__':
 
     if conf.rank == 0:
         runtime = second_ddhhmmss(end - start)
-        log_rank_zero(f'Total run-time: {runtime} seconds.')
+        log_rank_zero(f'Total runtime: {runtime} seconds.')
         conf.runtime = runtime
         conf.to_json(os.path.join(conf.exp_dir, 'settings.json'))
 
@@ -436,9 +440,5 @@ if __name__ == '__main__':
             wandb.finish()
         print(conf.best_acc)
 
-    if args.dist:
+    if args.multi_gpu and args.dist:
         dist.destroy_process_group()
-
-    del train_loader
-    del test_loader
-    torch.cuda.ipc_collect()
