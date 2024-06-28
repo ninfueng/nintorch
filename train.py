@@ -141,7 +141,7 @@ if __name__ == '__main__':
     group.add_argument('--re-count', type=float, default=1)
 
     group = parser.add_argument_group('imagenet')
-    group.add_argument('--dataset-dir', type=str, default='~/datasets/imagenet')
+    group.add_argument('--dataset-dir', type=str, default='~/datasets')
     args = parser.parse_args()
     args = AttrDict(vars(args))
 

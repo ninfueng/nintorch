@@ -69,6 +69,8 @@ def construct_model_cifar(
     if model_name == 'lenet5':
         model = LeNet5(*args, **kwargs)
 
+    elif model_name == 'vgg7':
+        model = VGG7(*args, **kwargs)
     elif model_name == 'vgg11':
         model = VGG('VGG11', *args, **kwargs)
     elif model_name == 'vgg13':

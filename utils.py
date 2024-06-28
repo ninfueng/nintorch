@@ -169,6 +169,7 @@ def get_datasets(
         )
 
     elif data_conf.dataset_name == 'imagenet':
+        dataset_dir = os.path.join(dataset_dir, 'imagenet')
         test_dataset = ImageFolder(os.path.join(dataset_dir, 'val'), test_transforms)
         if only_test:
             return test_dataset
@@ -288,14 +289,18 @@ def train_epoch(conf: AttrDict) -> None:
             msg = (
                 f'Tr E {conf.epoch_idx} ({batch_idx + 1}/{train_len}) | '
                 f'L: {losses.avg / (batch_idx + 1):.3e} | '
-                f'A: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+                f'A1: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
                 f'Lr: {cur_lr:.3e} |'
             )
             logging.info(msg)
 
             if conf.wandb and batch_idx == train_len - 1:
                 wandb.log(
-                    {'train_loss': losses.avg, 'train_acc': top1.avg},
+                    {
+                        'train_loss': losses.avg,
+                        'train_acc': top1.avg,
+                        'train_acc5': top5.avg,
+                    },
                     step=conf.epoch_idx,
                 )
 
@@ -347,15 +352,20 @@ def test_epoch(conf: AttrDict) -> None:
             and conf.rank == 0
         ):
             msg = (
-                f'Te E {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
+                f'Te E {conf.epoch_idx:,} ({batch_idx + 1:,}/{test_len:,}) | '
                 f'L: {losses.avg / (batch_idx + 1):.3e} | '
-                f'A: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+                f'A1: {top1.avg:.2f} ({int(top1.sum / 100.):,}/{top1.count:,}) | '
+                f'A5: {top5.avg:.2f} ({int(top5.sum / 100.):,}/{top5.count:,}) | '
             )
 
             if batch_idx == test_len - 1:
                 if conf.wandb:
                     wandb.log(
-                        {'test_loss': losses.avg, 'test_acc': top1.avg},
+                        {
+                            'test_loss': losses.avg,
+                            'test_acc': top1.avg,
+                            'test_acc5': top5.avg,
+                        },
                         step=conf.epoch_idx,
                     )
                 if top1.avg > conf.best_acc:
@@ -403,6 +413,7 @@ def test_epoch(conf: AttrDict) -> None:
         msg = (
             f'Te E {conf.epoch_idx} ({batch_idx + 1}/{test_len}) | '
             f'L: {losses.avg / (batch_idx + 1):.3e} | '
-            f'A: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+            f'A1: {top1.avg:.2f} ({int(top1.sum / 100.)}/{top1.count}) | '
+            f'A5: {top5.avg:.2f} ({int(top5.sum / 100.)}/{top5.count}) | '
         )
         print(msg)

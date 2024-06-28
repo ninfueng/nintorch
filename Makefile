@@ -1,6 +1,10 @@
-.PHONY: traincifar10
-traincifar10:
+.PHONY: train-cifar10
+train-cifar10:
 	python train.py --half --chl-last --compile --ema
+
+.PHONY: train-imagenet
+train-imagenet:
+	python train.py --half --chl-last --compile --dataset imagenet --model-name resnet18 --ema
 
 .PHONY: clean
 clean:
