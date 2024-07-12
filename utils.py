@@ -106,6 +106,8 @@ def get_transforms(
         re_mode=conf.re_mode,
         re_count=conf.re_count,
         interpolation=conf.interpolation,
+        mean=data_conf.mean,
+        std=data_conf.std,
     )
     if use_cifar:
         train_transforms.transforms[0] = T.RandomCrop(32, padding=4)
