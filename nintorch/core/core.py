@@ -6,6 +6,7 @@ from nincore.version import is_newer_equal_ver
 from torch import Tensor
 
 __all__ = [
+    'print_range',
     'print_stat',
     'torch_np',
     'np_torch',
@@ -17,6 +18,18 @@ __all__ = [
 infer_mode = (
     torch.inference_mode if is_newer_equal_ver(torch, '1.9.0') else torch.no_grad
 )
+
+
+@infer_mode()
+def print_range(a: Tensor | np.ndarray) -> None:
+    """Print a range of values.
+
+    Arguments:
+        a: a tensor to print a range of values with.
+    """
+    if isinstance(a, np.ndarray):
+        a = torch.from_numpy(a)
+    print(f'⊆ [{a.amin().item():,.6f}, {a.amax().item():,.6f}]')
 
 
 @infer_mode()
