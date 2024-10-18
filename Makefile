@@ -8,10 +8,10 @@ train-imagenet:
 
 .PHONY: clean
 clean:
-	rm -rf ./wandb/
 	rm -rf ./dist/
 	rm -rf ./build/
 	rm -rf ./nintorch.egg-info/
+	find . -iname wandb | xargs rm -rf
 	find . -iname .vscode | xargs rm -rf
 	find . -iname __pycache__ | xargs rm -rf
 	find . -iname .pytest_cache | xargs rm -rf
@@ -45,7 +45,7 @@ fmt:
 	black . \
 		--line-length 88 \
 		--exclude ./exps \
-		--target-version py311 \
+		--target-version py312 \
 		--skip-string-normalization
 
 .PHONY: fmtstr

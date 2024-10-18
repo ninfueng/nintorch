@@ -442,3 +442,4 @@ if __name__ == '__main__':
 
     if args.multi_gpu and args.dist:
         dist.destroy_process_group()
+    exit(0)
