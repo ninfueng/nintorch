@@ -1,4 +1,5 @@
 import numpy as np
+from torch import Tensor
 
 __all__ = ['AMinMaxScaler']
 
@@ -26,7 +27,7 @@ class AMinMaxScaler:
         )
         return input
 
-    def fit_transform(self, input: np.ndarray) -> np.ndarray:
+    def fit_transform(self, input: np.ndarray | Tensor) -> np.ndarray | Tensor:
         self.fit(input)
         return self.transform(input)
 
