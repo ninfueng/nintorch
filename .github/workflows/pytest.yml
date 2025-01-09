@@ -21,13 +21,13 @@ jobs:
       - name: setup python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: 3.11
           cache: pip
 
       - name: pip install dependencies
         run: |
           pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip3 install numpy albumentations tqdm scikit-learn PyYAML pytest torchprofile requests
+          pip3 install numpy albumentations tqdm scikit-learn PyYAML pytest torchprofile requests safetensors
           pip3 install git+https://github.com/ninfueng/nincore.git@master
           python setup.py install
 
