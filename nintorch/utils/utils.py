@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import torch
@@ -10,7 +10,7 @@ from torch.utils.data.dataloader import DataLoader
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['AvgMeter', 'time_loader']
+__all__ = ['AvgMeter', 'time_loader', 'get_gpu_usage']
 
 
 class AvgMeter:
@@ -61,7 +61,9 @@ def time_loader(
     device: torch.device = torch.device('cpu'),
     verbose: bool = True,
 ) -> int:
-    """Given a `data_loader`, return an optimized number of workers with minimize load-times."""
+    """Given a `data_loader`, return an optimized number of workers with minimize
+    load-times.
+    """
 
     timings = []
     for num_worker in num_workers_to_test:
@@ -81,3 +83,17 @@ def time_loader(
     best_timing_idx = np.argmin(timings)
     best_num_workers = num_workers_to_test[best_timing_idx]
     return best_num_workers
+
+
+def get_gpu_usage(device: Optional[torch.device] = None) -> int:
+    """Get a GPU usage in MB.
+
+    Examples:
+
+    >>> device = torch.device('cuda:0')
+    >>> mem = get_gpu_usage(device)
+    """
+    mem = torch.cuda.max_memory_allocated(device=device)
+    mem //= 1024 * 1024
+    torch.cuda.reset_peak_memory_stats()
+    return mem

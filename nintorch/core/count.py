@@ -13,12 +13,9 @@ TORCH_PROFILE = False
 try:
     from torchprofile import profile_macs
 
-    TORCH_PROFILE = True
+    USE_TORCH_PROFILE = True
 except ImportError:
-    raise ImportError(
-        '`count_macs` requires `torchprofile`.'
-        'Please install via `pip install torchprofile`.'
-    )
+    USE_TORCH_PROFILE = False
 
 
 __all__ = [
@@ -176,7 +173,7 @@ def count_latency(
 
 
 # While can using with `torchprofile.count_mac` directly, but fn is just for a reminder.
-if TORCH_PROFILE:
+if USE_TORCH_PROFILE:
     __all__.append('count_macs')
 
     @infer_mode()
