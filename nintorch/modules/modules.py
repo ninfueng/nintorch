@@ -24,16 +24,22 @@ class Lambda(nn.Module):
     >>> convert_layer(model, nn.ReLU, act_fn)
     """
 
-    def __init__(self, fn: Callable[..., Tensor], *_, **__) -> None:
+    def __init__(self, fn: Callable[..., Tensor], *args, **kwargs) -> None:
         super().__init__()
         self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
 
-    def forward(self, x: Tensor, *args, **kwargs) -> Tensor:
-        x = self.fn(x, *args, **kwargs)
-        return x
+    def forward(self, input: Tensor) -> Tensor:
+        try:
+            # if fn does not support **self.kwargs then using only *args
+            return self.fn(input, *self.args, **self.kwargs)
+        except TypeError:
+            return self.fn(input, *self.args)
 
     def __repr__(self) -> str:
-        return f'{super().__repr__()[:-1]}fn={self.fn})'
+        # https://stackoverflow.com/questions/251464/how-to-get-a-function-name-as-a-string
+        return f'{super().__repr__()[:-2]}fn={self.fn.__qualname__})'
 
 
 class ConvNormAct(nn.Sequential):
