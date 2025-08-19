@@ -101,15 +101,13 @@ def convert_layer(
 
         elif isinstance(module, nn.Module):
             try:
-                module_output = replace_module(inplace=module.inplace, *args, **kwargs)
-            except (TypeError, AttributeError):
-                # A problem with third party built-in activation.
-                # Some activation may not contains the inplace attribute.
-                # If exception raised, recreates module without an inplace argument.
                 module_output = replace_module(*args, **kwargs)
+            except TypeError:
+                # already instantiation
+                module_output = replace_module
 
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f'Detect non support type: {module}.')
 
     if hasattr(module, 'qconfig'):
         module_output.qconfig = module.qconfig
@@ -144,6 +142,7 @@ if __name__ == '__main__':
     model = convert_layer(model, nn.BatchNorm2d, nn.SyncBatchNorm, True)
     model = convert_layer(model, nn.Linear, AnotherLinear, True)
     model = convert_layer(model, nn.Conv2d, nn.ConvTranspose2d, True)
+    model = convert_layer(model, nn.ReLU, nn.Hardtanh, True)
     print('Convert ResNet18')
     print('Convert `BatchNorm2d -> SyncBatchNorm`')
     print('Convert `Linear -> AnotherLinear`')
